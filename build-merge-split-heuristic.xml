@@ -1,0 +1,42 @@
+<project  name="EnumMergeSplitHeuristicCC" default="run">
+
+<path id="jars">
+  <fileset dir="./lib" includes="**/*.jar"/>
+</path>
+
+<target name="clean">
+  <delete dir="bin"/>
+  <delete dir="exe"/>
+</target>
+
+<target name="compile">
+  <mkdir dir="bin"/>
+  <javac srcdir="src" destdir="bin" classpathref="jars" includeantruntime="false"/>
+</target>
+
+<target name="jar" depends="compile">
+
+  <mkdir dir="exe"/>
+
+  <jar destfile="exe/EnumMergeSplitHeuristicCC.jar" basedir="bin">
+
+    <zipgroupfileset dir="lib" includes="*.jar"/>
+
+    <manifest>
+      <attribute name="Main-Class" value="main.MergeSplitHeuristic"/>
+    </manifest>
+
+  </jar>
+</target>
+
+<target name="run">
+  <java jar="exe/EnumMergeSplitHeuristicCC.jar" fork="true">
+    <sysproperty key="inputDirPath" path="${inputDirPath}"/>
+    <sysproperty key="graphFileName" value="${graphFileName}"/>
+    <sysproperty key="startSolutionDirPath" value="${startSolutionDirPath}"/>
+    <sysproperty key="outDir" path="${outDir}"/>
+    <sysproperty key="maxNbEdit" value="${maxNbEdit}"/>
+  </java>
+</target>
+
+</project>
