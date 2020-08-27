@@ -1,0 +1,152 @@
+ ############################################################################
+ # It reads a .G graph file, and returns the contents as a data frame object.
+ #
+ # network.path: the file path which stores the .G graph file>
+ #
+ ############################################################################
+ read.graph.ils.file.as.df = function(network.path){
+ # skip the first line bc it does not contain graph info
+ df = read.table(
+ file=network.path, 
+ header=FALSE, 
+ sep="\t", 
+ skip=1, 
+ check.names=FALSE
+ )
+ # df$V1: vertex1
+ # df$V2: vertex2
+ # df$V3: weight
+ return(df)
+ }
+ 
+ 
+ 
+ ############################################################################
+ #  It reads a .G graph file, and returns the contents as a igraph graph object.
+ #  To handle isolated nodes, first we had to find the max vertex id.
+ #  Then, indicate explicitely vertices ids in graph.data.frame()
+ #
+ # network.path: the file path which stores the .G graph file
+ #
+ ############################################################################
+ read.graph.ils = function(network.path){
+ df = read.graph.ils.file.as.df(network.path)
+ 
+ edg.list = df[,c(1, 2)]
+ max.v.id = max(unique(c(edg.list[,1], edg.list[,2])))
+ 
+ g <- graph.data.frame(edg.list, vertices=seq(0,max.v.id), directed=FALSE)
+ E(g)$weight = df[, 3]
+ # V(g)$id = seq(0,max.v.id)
+ # V(g)$id = seq(1,max.v.id+1)
+ 
+ return(g)
+ }
+
+
+
+ ################################################################################>
+ # Loads the partition estimated by the ExCC tool.
+ # 
+ # file.name: the path and name of the file to load.
+ #
+ # returns: the corresponding partition as a membership vector.
+ ###############################################################################
+ load.ExCC.partition <- function(part.folder, result.filename)
+ {
+     ExCC.output.file <- file.path(part.folder, result.filename)
+     #if(algo.name == COR.CLU.ExCC) TODO
+     #ExCC.output.file <- file.path(part.folder, "ExCC-result.txt")
+     
+     # open and read the file
+     #print(file.name)
+     con <- file(ExCC.output.file, "r")
+     lines <- readLines(con)
+     close(con)
+     #print("---")
+     #print(lines)
+     
+     # process the file content
+     i <- 1
+     line <- lines[i]
+     res <- list()
+     
+     # TODO: change here if the result file has more information than just the partition
+     # in that case, put this line: while(line!="")
+     while(!is.na(line)) # line!=""
+     {  # process current line
+         #print(line)
+         line <- strsplit(x=line, "[", fixed=TRUE)[[1]][2]
+         line <- strsplit(x=line, "]", fixed=TRUE)[[1]][1]
+         
+         # we increment by 1 at the end because C++ starts counting from 0
+         nodes <- as.integer(strsplit(x=line,", ", fixed=TRUE)[[1]]) + 1
+         
+         res[[length(res)+1]] <- nodes
+         
+         # process next line
+         i <- i + 1
+         line <- lines[i]  
+     }
+     
+     
+     # build the membership vector
+     mx <- max(unlist(res))
+     membership <- rep(NA,mx)
+     for(i in 1:length(res))
+     {  nodes <- res[[i]]
+     membership[nodes] <- i 
+     }
+     
+     #print(membership)
+     return(membership)
+ }
+
+
+
+
+
+library(e1071) # hamming distance
+source("~/eclipse/workspace-neon/Sosocc/src/evaluate-partitions/evaluate-imbalance.R")
+
+#part.folder="/media/nejat/TOSHIBA EXT/0CC-Opti-Heur-Analysis/out/partitions/n=32_k=2_dens=1.0000/propMispl=0.7000/propNeg=0.5161/network=3/ExCC-all/signed-unweighted"
+#part.folder="/media/nejat/TOSHIBA EXT/0CC-Opti-Heur-Analysis/out/partitions/n=28_k=4_dens=1.0000/propMispl=0.3500/propNeg=0.7778/network=3/ExCC-all/signed-unweighted"
+##part.folder="/media/nejat/TOSHIBA EXT/0CC-Opti-Heur-Analysis/out/partitions/n=28_k=2_dens=1.0000/propMispl=0.4500/propNeg=0.5185/network=7/ExCC-all/signed-unweighted"
+## /sshfs/Sosocc/in/random-networks/n=36_l0=2_dens=0.2500/propMispl=0.5000/propNeg=0.6000/network=1/
+
+part.folder="/media/nejat/VERBATIM HD/workspace/CC-Opti-Heurs-Analysis/out/partitions/n=50_k=3_dens=1.0000/propMispl=0.3000/propNeg=0.6800/network=5/ExCC-all/signed-unweighted"
+
+source("~/eclipse/workspace-neon/Sosocc/src/cluster-analysis/define-purity.R")
+source("~/eclipse/workspace-neon/Sosocc/src/evaluate-partitions/create-relative-plot-membership.R")
+
+
+# rel.membrshp2 = create.relative.plot.membership(membrshp1, membrshp2)
+# hamming.distance(membrshp1,rel.membrshp2)
+
+
+
+
+
+
+
+
+part.folder = "ExCC-all/signed-unweighted"
+base.mbrshp.files = list.files(path = part.folder, pattern = paste0("^", "membership", ".*\\.txt$")) # filenames are not ordered properly
+
+base.membrshp0 = read.table(file.path(part.folder,"membership0.txt"))$V1
+
+
+
+for(i in 0:1072){
+    base.mbrshp.file = paste0("membership",i,".txt")
+    cat("base.mbrshp.file:",base.mbrshp.file,"\n")
+    base.membrshp = read.table(file.path(part.folder,base.mbrshp.file))$V1
+
+
+    rel.membrshp2 = create.relative.plot.membership(base.membrshp0, base.membrshp)
+    dist = hamming.distance(base.membrshp0,rel.membrshp2)
+    print(dist)
+
+}
+
+

@@ -1,0 +1,24 @@
+----
+date: 15 août 2019 16:16:40(n): (0)
+	cp time:	1 654s
+	time BB:		0s
+	node:		0n
+	first relax.:	0,0
+	last CP relax.:	-1,0
+	gap after cp:		-1,00
+	final gap:		0,00
+	best int.:	0
+	cp it.:		10 637
+	cp sep user cut time:	1 104,85s
+	cp sep triangle time:	3,03s
+	cp sep it user cut nb:	10 636
+	cp sep it triangle nb:	33
+	cp rounding time:	0.0
+	BB sep. user cut time:	0.0s
+	BB sep. user cut it. nb.:	0
+	cp cuts:
+		ST_Grotschell cut:	575
+		ST_Labbe cut:	15
+		triangle iterative cut:	11
+		ST_KL cut:	95
+

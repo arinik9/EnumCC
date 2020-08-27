@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +79,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 		//foundClusterings.clear();
 		int pass = 0;
 		nextInitClusterings.add(this.initClustering);
+		foundClusterings.add(this.initClustering);
 		clusteringSizesByPass.add(nextInitClusterings.size());
 		while(remainingTime>0 && nextInitClusterings.size()>0){
 			pass++;
@@ -89,39 +91,39 @@ public class EnumerationBFS extends AbstractEnumeration {
 			currInitClusterings.addAll(nextInitClusterings);
 			nextInitClusterings.clear();
 
-//			// sequential version, we put it here just in case
-//			processSeqCurrInitClusteringsWithoutTimeLimit(currInitClusterings, maxNbEdit, -1);
+			// sequential version, we put it here just in case
+			processSeqCurrInitClusteringsWithoutTimeLimit(currInitClusterings, maxNbEdit, -1);
 			
-			// ========================================================================================
-//			int timeoutThreads = 10; // 10 seconds => arbitrary
-//			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithTimeLimit(
-//					currInitClusterings, maxNbEdit, NB_THREAD, timeoutThreads);
-			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithoutTimeLimit(
-					currInitClusterings, maxNbEdit, NB_THREAD, pass);
-			
-		    //Set<Clustering> currFoundClusterings = new HashSet<>();
-	        for (int i=0; i<threads.size(); i++) 
-	        {
-	        	MyGenericEnumeration myEnum = threads.get(i);
-	        	Set<Clustering> currFoundClusterings = myEnum.foundClusterings;
-				Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings);
-				for(Clustering c1 : subset){ 
-					c1.computeImbalance(adjMat); 
-					// id should be handled here, since we cannot generate only non-visited clusterings in BFS
-					//	so, we need to check if a clustering is already visited or not
-					c1.setId(idCounter++); 
-					System.out.println(c1);
-				}
-				nextInitClusterings.addAll(subset);
-				foundClusterings.addAll(nextInitClusterings);
-				
-				// ======
-				
-				for(int nbEdit=1;nbEdit<=maxNbEdit;nbEdit++){
-					String desc = "solId:"+myEnum.initClustering.getId()+",time:"+myEnum.execTimesByNbEdit[nbEdit-1];
-					execTimesByNbEditMap.get(nbEdit).add(desc);
-				}
-	        }
+//			// ========================================================================================
+////			int timeoutThreads = 10; // 10 seconds => arbitrary
+////			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithTimeLimit(
+////					currInitClusterings, maxNbEdit, NB_THREAD, timeoutThreads);
+//			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithoutTimeLimit(
+//					currInitClusterings, maxNbEdit, NB_THREAD, pass);
+//			
+//		    //Set<Clustering> currFoundClusterings = new HashSet<>();
+//	        for (int i=0; i<threads.size(); i++) 
+//	        {
+//	        	MyGenericEnumeration myEnum = threads.get(i);
+//	        	Set<Clustering> currFoundClusterings = myEnum.foundClusterings;
+//				Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings);
+//				for(Clustering c1 : subset){ 
+//					c1.computeImbalance(adjMat); 
+//					// id should be handled here, since we cannot generate only non-visited clusterings in BFS
+//					//	so, we need to check if a clustering is already visited or not
+//					c1.setId(idCounter++); 
+//					System.out.println(c1);
+//				}
+//				nextInitClusterings.addAll(subset);
+//				foundClusterings.addAll(nextInitClusterings);
+//				
+//				// ======
+//				
+//				for(int nbEdit=1;nbEdit<=maxNbEdit;nbEdit++){
+//					String desc = "solId:"+myEnum.initClustering.getId()+",time:"+myEnum.execTimesByNbEdit[nbEdit-1];
+//					execTimesByNbEditMap.get(nbEdit).add(desc);
+//				}
+//	        }
 	        // ========================================================================================
 	        clusteringSizesByPass.add(nextInitClusterings.size());
 			//System.out.println("Current size: " + foundClusterings.size());
@@ -158,25 +160,39 @@ public class EnumerationBFS extends AbstractEnumeration {
 //			System.out.println("-------------------------");
 //			System.out.println("initCounter:"+initCounter+" of " + currInitClusterings.size());
 //			System.out.println("Current foundClusterings size: " + foundClusterings.size());
-			
+//			System.out.println(initClustering);
+//			System.out.println("!!!!!!!!! nb edit parent:" + initClustering.getNbEditParent());
+//			Iterator<Clustering> it = foundClusterings.iterator();
+//			System.out.println("parent clustering id: "+initClustering.getParentClusteringId());
+//			while(it.hasNext()){
+//				Clustering p = it.next();
+//				if(p.getId() == initClustering.getParentClusteringId()){
+//					System.out.println("parent");
+//					System.out.println(p);
+//					break;
+//				}
+//			}
+
 			MyGenericEnumeration edit = new MyGenericEnumeration(maxNbEdit, adjMat, initClustering, pass);
-			
-			
 			edit.enumerate();
 			Set<Clustering> currFoundClusterings = edit.foundClusterings;
 			
 			System.out.println("-------------------------");
 			for(Clustering c1 : currFoundClusterings){
 				c1.computeImbalance(adjMat); //System.out.println(c1);
+				c1.setId(idCounter++); 
+//				System.out.println("!!!!!!!!! nb edit parent:" + c1.getNbEditParent());
+//				System.out.println(c1);
 			}
-			System.out.println("current size: " + currFoundClusterings.size());
+//			System.out.println("current size: " + currFoundClusterings.size());
 			
 			Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings);
-			System.out.println("current final size: " + subset.size());
+			//System.out.println("current final size: " + subset.size());
 
 			// for(Clustering c1 : subset){ c1.computeImbalance(adjMat); System.out.println(c1); }
 			nextInitClusterings.addAll(subset);
 			foundClusterings.addAll(nextInitClusterings);
+			System.out.println("final size: " + foundClusterings.size());
 		}
 		
 	}

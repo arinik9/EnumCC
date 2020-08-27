@@ -1,9 +1,5 @@
 package enumeration;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -19,13 +15,17 @@ import java.util.stream.Collectors;
 import myUtils.ArrayOperations;
 import myUtils.Clustering;
 import myUtils.Combination;
+import myUtils.Combination2;
+import myUtils.DirectedGraph;
 import myUtils.MyCGraph;
 import myUtils.Permutation;
 import myUtils.UndirectedGraph;
 import myUtils.UniquePartitionSize;
-import permanence.Permanence;
-import weka.Kmeans;
-import weka.core.Instances;
+import permanence.MovingDependance;
+// import permanence.Permanence;
+// import permanence.Permanence.PermanenceData;
+// import weka.Kmeans;
+// import weka.core.Instances;
 
 public class MyGenericEnumeration extends Thread {
 //public class MyGenericEnumeration {
@@ -43,9 +43,16 @@ public class MyGenericEnumeration extends Thread {
 	double totalExecTime;
 	
 	boolean isBruteForce = false; // value by default
-	boolean isFastFrom4Edit = false;
 	boolean usePermenanceScores = true;
 	boolean[] isWeakPermanent;
+	//final int NB_NODE_FOR_PERMANENCE = 20;
+	
+	// if true, a moving node can move into 2 or 3 target clusters (these clusters are the most likely one) in order to obtain an edit operation in the end
+	// this might gain some time
+	boolean useMostLikelyTargetClusters = true;
+	MovingDependance movDep;
+//	boolean[] isLikelyMovingNode;
+//	int[] nbLikelyMovingNodesByCluster;
 	
 	//public MyGenericEnumeration(int maxNbEdit_, double[][] adjMat_, Clustering initClustering_, long idCounter_){
 	public MyGenericEnumeration(int maxNbEdit_, double[][] adjMat_, Clustering initClustering_, int pass_){
@@ -61,49 +68,62 @@ public class MyGenericEnumeration extends Thread {
 		execTimesByNbEdit = new double[maxNbEdit];
 		this.pass = pass_;
 		
-		if(usePermenanceScores && maxNbEdit>3){
-			Permanence p = new Permanence(adjMat, g);
-			double[] scores = p.computePermananceScores();
-			isWeakPermanent = new boolean[n];
-			int nb = 0;
+		
+		
+		
+//		movDep = new MovingDependance(g, adjMat, initClustering, maxNbEdit); // TOOD nbEdit OR maxNbEdit ??
+//		DirectedGraph diG = movDep.buildMovingDependenceGraph();
+//		ArrayList<ArrayList<Integer>> subsetList = movDep.prepareResult(diG);
+		
+		
+//		// ========================================
+//		isLikelyMovingNode = new boolean[n];
+//		for(int i=0; i<n; i++)
+//			isLikelyMovingNode[i] = true; // by default
+//		// ========================================
+
+		
+//		if(usePermenanceScores && maxNbEdit>3){
+//			Permanence p = new Permanence(adjMat, g);
+//			PermanenceData[] results = p.computePermananceScores();
+//			isWeakPermanent = new boolean[n];
+//			int nb = 0;
 			
-			Kmeans kmeans = new Kmeans(); // TODO
-			int[] assignments = kmeans.run(scores, 2);
-			if(assignments != null) { // TODO why kmeans may have an error ? seed problem ?
-				double[] centroids = kmeans.getCentroids();
-				int labelWeak = 1;
-				if(centroids[0] < centroids[1])
-					labelWeak = 0;
-				
-				for(int i=0; i<adjMat.length; i++){
-					isWeakPermanent[i] = false;
-					//if(scores[i]<0){ // TODO: how to decide this criteria: which nodes will be considered as weak ?
-					if(assignments[i] == labelWeak){
-						nb += 1;
-						isWeakPermanent[i] = true;
-					}
-				}
-			} else {
-				for(int i=0; i<adjMat.length; i++){
-					isWeakPermanent[i] = false;
-					if(scores[i]<0){
-						nb += 1;
-						isWeakPermanent[i] = true;
-					}
-				}
-			}
-			
-//			for(int i=0; i<adjMat.length; i++){
-//				isWeakPermanent[i] = false;
-//				// try to perform 4-edit operations with 10 nodes having worst permanence scores
-//				if(scores[i]<0 && nb<10){ // TODO I fixed this to 10 nodes, I am not sure if this fits well 
-//					nb += 1;
-//					isWeakPermanent[i] = true;
+//			Kmeans kmeans = new Kmeans(); // TODO
+//			int[] assignments = kmeans.run(scores, 2);
+//			if(assignments != null) { // TODO why kmeans may have an error ? seed problem ?
+//				double[] centroids = kmeans.getCentroids();
+//				int labelWeak = 1;
+//				if(centroids[0] < centroids[1])
+//					labelWeak = 0;
+//				
+//				for(int i=0; i<adjMat.length; i++){
+//					isWeakPermanent[i] = false;
+//					//if(scores[i]<0){ // TODO: how to decide this criteria: which nodes will be considered as weak ?
+//					if(assignments[i] == labelWeak){
+//						nb += 1;
+//						isWeakPermanent[i] = true;
+//					}
 //				}
-//			}
+//			} 
 			
-			System.out.println("nb weak permanent: " + nb);
-		}
+//			for(int i=0; i<adjMat.length; i++)
+//				isWeakPermanent[i] = false;
+//			
+//			for(int i=0; i<NB_NODE_FOR_PERMANENCE; i++){
+//				System.out.println("node id: " + results[i].getNodeId() + ", score: "+results[i].getPermScore());
+//				isWeakPermanent[results[i].getNodeId()] = true;
+//			}
+//			System.out.println("nb weak permanent: " + NB_NODE_FOR_PERMANENCE);
+
+//			int counter = 0;
+//			for(int i=0; i<n; i++){
+//				isWeakPermanent[i] = !movDep.isPermanentNode[i];
+//				if(!movDep.isPermanentNode[i])
+//					counter++;
+//			}
+//			System.out.println("nb weak permanent: " + counter);
+//		}
 	}
 	
 	
@@ -126,29 +146,80 @@ public class MyGenericEnumeration extends Thread {
             //Thread.currentThread().interrupt();
         } 
     }
-
+	
+	
 	
 	// main method
 	public void enumerate(){
 //		foundClusterings.clear();
 //		foundClusteringsByNbEditMap.clear();
-
-		// ===============
 		
+		// ===============
+		System.out.println(initClustering);
 		for(int nbEdit=1;nbEdit<=this.maxNbEdit;nbEdit++){
-//			System.out.println("nbEdit: " + nbEdit);
-			enumerateByNbEdit(nbEdit); // this put all found clusterings into 'foundClusteringsByNbEditMap'
+			//System.out.println("nbEdit: " + nbEdit);
+			
+			long startTime = System.currentTimeMillis();
+			
+			if(usePermenanceScores && nbEdit>3){ // multiple times
+				for(int levelNo=0; levelNo<nbEdit; levelNo++){
+					//System.out.println("levelNo: " + levelNo);
+					
+					if(nbEdit ==4)
+						movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 12, 2); // TODO put 15, 3, when n>40
+					else 
+						movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 12, 2);
+
+					DirectedGraph diG = movDep.buildMovingDependenceGraph();
+					
+					for(ArrayList<Integer> subset : movDep.prepareResult(diG, levelNo)){
+						isWeakPermanent = new boolean[n];
+						for(int v : subset){
+							isWeakPermanent[v] = true;
+						}
+						//System.out.println("nb weak permanent: " + subset.size() + " => " + subset);
+						
+						enumerateByNbEdit(nbEdit);
+					}
+				}
+				
+//				for(int levelNo : subsetListMap.keySet()){
+//					System.out.println("levelNo: " + levelNo);
+//
+//					for(ArrayList<Integer> subset : subsetListMap.get(levelNo)){
+//						isWeakPermanent = new boolean[n];
+//						for(int v : subset){
+//							isWeakPermanent[v] = true;
+//						}
+//						System.out.println("nb weak permanent: " + subset.size() + " => " + subset);
+//						
+//						enumerateByNbEdit(nbEdit);
+//					}
+//				}
+			} 
+			else // Once
+				enumerateByNbEdit(nbEdit);
+			
+//			enumerateByNbEdit(nbEdit); // this put all found clusterings into 'foundClusteringsByNbEditMap'
 //			System.out.println("nbEdit: " + nbEdit + ", curr found size:"+this.foundClusterings.size());
+//			totalExecTime += execTimesByNbEdit[nbEdit-1]; // 'execTimesByNbEdit[nbEdit]' is assigned in 'enumerateByNbEdit'
+			
+			long endTime = System.currentTimeMillis();
+			execTimesByNbEdit[nbEdit-1] = (float) (endTime-startTime)/1000;
+			//System.out.println("exec time: " + execTimesByNbEdit[nbEdit-1]);
 			totalExecTime += execTimesByNbEdit[nbEdit-1]; // 'execTimesByNbEdit[nbEdit]' is assigned in 'enumerateByNbEdit'
+
 		}
 	}
 	
 	
 	// main method by nbEdit
 	public void enumerateByNbEdit(int nbEdit) {
+		// actually, the object 'foundClusteringsByNbEditMap' is not important for output, it only stores the discovered solutions in the current method, 
+		//		then they are transferred into 'foundClusterings'
 		foundClusteringsByNbEditMap.put(nbEdit, new ArrayList<Clustering>());
 		
-		long startTime = System.currentTimeMillis();
+//		long startTime = System.currentTimeMillis();
 		
 		List<Integer> clusterIds = new ArrayList<Integer>();
 		for(int i=1; i<=initClustering.getNbCluster(); i++)
@@ -166,8 +237,8 @@ public class MyGenericEnumeration extends Thread {
 			// System.out.println("nbSourceCluster: " + nbSourceCluster + " => " + (float) (endTime2-startTime2)/1000);
 		}
 		
-		long endTime = System.currentTimeMillis();
-		execTimesByNbEdit[nbEdit-1] = (float) (endTime-startTime)/1000;
+//		long endTime = System.currentTimeMillis();
+//		execTimesByNbEdit[nbEdit-1] = (float) (endTime-startTime)/1000;
 //		System.out.println("exec time: " + execTimesByNbEdit[nbEdit-1]);
 		
 		// ========
@@ -210,7 +281,9 @@ public class MyGenericEnumeration extends Thread {
 		// =========================================
 		// permanance
 		int[] initClusterSizes = initClustering.getClusterSizes();
-		if(usePermenanceScores && nbEdit>3){ // the enumeration is fast up to 3edit
+		if(usePermenanceScores && nbEdit>3){ // the enumeration is fast up to 3edit >> previous version
+		//if(usePermenanceScores && nbEdit>3 && nbSourceCluster>1){ // the enumeration is fast up to 3edit
+			// do not use permanence based filtering, if nbSourceCluster=1 (i.e. split from a big cluster)
 			Clustering temp = new Clustering(initClustering);
 			for(int i=0; i<n; i++)
 				if(!isWeakPermanent[i])
@@ -239,15 +312,52 @@ public class MyGenericEnumeration extends Thread {
 	
 	
 	
+//	public ArrayList<Integer> getUnlikelyTargetClusterIds(TNode node){
+//		ArrayList<ArrayList<Integer>> initClusters = initClustering.getClustersInArrayFormat();
+//		ArrayList<Integer> unlikelyTargetClusterIds = new ArrayList<Integer>();
+//		
+//		double sourceFitness = g.weightSumInClusters[node.nodeId][node.clusterId-1];
+//		for(int targetClusterId=1; targetClusterId<=(initClustering.getNbCluster()); targetClusterId++){
+//			if(targetClusterId != node.clusterId){
+//				double targetFitness = g.weightSumInClusters[node.nodeId][targetClusterId-1];
+//				
+//				int nbPossibleGain = 0;
+//				for(int otherNodeId : initClusters.get(targetClusterId-1)){
+//					// if a node v has a negative link with another node in a target cluster, and that other node is likely to move,
+//					//		then this would be good for node v.
+//					if(this.adjMat[node.nodeId][otherNodeId]<0 && this.isLikelyMovingNode[otherNodeId]){
+//						nbPossibleGain++;
+//					}
+//				}
+//				
+//				if(targetFitness < -2)
+//					unlikelyTargetClusterIds.add(targetClusterId);
+//				else if((targetFitness+nbPossibleGain) < 0) // TODO we might handle better
+//					unlikelyTargetClusterIds.add(targetClusterId);
+//				else if( (sourceFitness-targetFitness)>=4 ) // TODO we need to adjust 4 based on 'maxNbEdit'
+//					unlikelyTargetClusterIds.add(targetClusterId);
+//			}
+//		}
+//		
+//		return(unlikelyTargetClusterIds);
+//	}
+//	
+	
+	
+	
+	
 	public void enumerateByNodes(int nbEdit, int[] sourceClusterSizes, int[] sourceClusterIds) {
 		// sourceClusterSizes : {6, 1, 1}
 		// clusterIds : {2,4,5}
 		ArrayList<ArrayList<ArrayList<TNode>>> allSelNodesList = new ArrayList<ArrayList<ArrayList<TNode>>>();
 		
+
+
 		// =========================================
 		// permanance
 		ArrayList<ArrayList<Integer>> clusters = initClustering.getClustersInArrayFormat();
-		if(usePermenanceScores && nbEdit>3){
+		if(usePermenanceScores && nbEdit>3){ // the enumeration is fast up to 3edit >> previous version
+		//if(usePermenanceScores && nbEdit>3 && sourceClusterSizes.length>1){ // nbSourceCluster = sourceClusterSizes.length
 			Clustering temp = new Clustering(initClustering);
 			for(int i=0; i<n; i++)
 				if(!isWeakPermanent[i])
@@ -255,6 +365,7 @@ public class MyGenericEnumeration extends Thread {
 			clusters = temp.getClustersInArrayFormat();
 		}
 		// =========================================
+		
 		
 		for(int i=1; i<=sourceClusterIds.length; i++){
 			int sourceClusterId = sourceClusterIds[i-1];
@@ -265,15 +376,27 @@ public class MyGenericEnumeration extends Thread {
 			for(int[] nodeIds : combNodeIds){
 				// nodeIds : {2,3,5,7,8,9}
 				ArrayList<TNode> selNodes = new ArrayList<>();
+
+				boolean ok = true;
 				for(int j=0; j<nodeIds.length; j++){
 					TNode node = new TNode(nodeIds[j],sourceClusterId,-1, new ArrayList<>());
+					
+					// =========================
+					if(nbEdit>3 && this.useMostLikelyTargetClusters){
+						ArrayList<Integer> unlikelyTargetClusterIds = 
+								new ArrayList<Integer>(movDep.unlikelyTargetClusterIdListArray[node.nodeId]);
+						node.addNotEqualToConstraints(unlikelyTargetClusterIds);
+					}
+					// =========================
 					selNodes.add(node);
 				}
-				newSelNodesList.add(selNodes);
+				if(ok)
+					newSelNodesList.add(selNodes);
+				
 			}
 			
 			// if there are already items in 'selNodesList', we need to duplicate each item in 'selNodesList' by tempSelNodesList.size() times
-			ArrayList<ArrayList<TNode>> combSelNodesList = new ArrayList<ArrayList<TNode>>();
+			//ArrayList<ArrayList<TNode>> combSelNodesList = new ArrayList<ArrayList<TNode>>();
 			if(allSelNodesList.size()>0){
 				// ex: newSelNodesList = {{6,7},{6,8},{7,8}} --> it is created for each source cluster and 1 item per each combination
 				// selNodesList: {{{1,2}},{{1,3}},{{2,3}}}
@@ -334,7 +457,7 @@ public class MyGenericEnumeration extends Thread {
 		ArrayList<ArrayList<Integer>> initClusters = initClustering.getClustersInArrayFormat();
 		
 		boolean hasTwoSourceClusters = (selNodesList.size()==2);
-		boolean isSourceClusterSizesLessThanThree = true; // in case of 4edit, this will helper function to find sub2edit or sub3edit operation
+		boolean isSourceClusterSizesLessThanThree = true; // in case of 4edit or more, this will be a helper function to find sub2edit or sub3edit operation
 		for(int i=0; i<sourceClusterSizes.length; i++){
 			if(sourceClusterSizes[i]>2){
 				isSourceClusterSizesLessThanThree = false;
@@ -342,24 +465,18 @@ public class MyGenericEnumeration extends Thread {
 			}
 		}
 
-	
 		
 		// ==========================================================
 		// PART 1: Trying to filter before determining target cluster ids
 		// ==========================================================
 		
-//		boolean isConnectedSourceNodes = true;
 		boolean isConnectedSourceNodes = isConnectedInternalMovingNodes(selNodesList); // not neceseraly positive connectivity
-//		boolean isWeightSumZeroInternalSourceNeighbors = false;
 		boolean isWeightSumZeroInternalSourceNeighbors = isWeightSumZeroWithInternalSourceNeighborNodes(selNodesList);
 		boolean isPositiveInternalNeighLinks = true;
-		////if(nbEdit <= 3)
-		if(nbEdit <= 3 || (nbEdit>3 && isFastFrom4Edit))
+		if(nbEdit <= 3)
 			isPositiveInternalNeighLinks = isPositiveInternalNeighborLinksForUpTo3Edit(selNodesList);
 		
 		boolean ok = true;
-//		if(nbEdit>3 && isFastFrom4Edit && !isSourceClusterSizesLessThanThree)
-//			ok = false;
 		
 		if(isConnectedSourceNodes && !isWeightSumZeroInternalSourceNeighbors && isPositiveInternalNeighLinks && ok){ // !isBruteForce && 
 		
@@ -387,11 +504,6 @@ public class MyGenericEnumeration extends Thread {
 			} // selNodes is an array list containing all selected moving nodes of size 'nbEdit'
 			
 			
-//			if(nbEdit==4 && selNodes.get(0).getNodeId() == 5 && selNodes.get(1).getNodeId() == 9 //&& selNodes.get(2).getNodeId() == 22 && selNodes.get(3).getNodeId() == 26
-//			//&& selNodes.get(0).getTargetClusterId() == 4 && selNodes.get(1).getTargetClusterId() == 4 && selNodes.get(2).getTargetClusterId() == -1
-//			)
-//				System.out.println("d");
-	
 				
 			// =============================================================================
 			// PART 2: Trying to filter after target cluster ids & before determining target indexes 
@@ -399,22 +511,37 @@ public class MyGenericEnumeration extends Thread {
 			
 			ArrayList<ArrayList<TNode>> updatedSelNodesList = prepareSelNodesWithTargetClusterIds(selNodes, allClusterIdsInterest);
 			
+			
+			if(nbEdit>3 && this.useMostLikelyTargetClusters){
+				updatedSelNodesList = filterByLessLikelyTargetClusters(updatedSelNodesList);
+			}
+			
+//			for(ArrayList<TNode> selNodes1 : updatedSelNodesList){
+//				if(nbEdit==4 && selNodes1.get(0).getNodeId() == 34 && selNodes1.get(1).getNodeId() == 15 && 
+//					selNodes1.get(2).getNodeId() == 31 && selNodes1.get(3).getNodeId() == 33
+//					&& selNodes1.get(0).getTargetClusterId() == -1
+//					&& selNodes1.get(1).getTargetClusterId() == 8
+//					&& selNodes1.get(2).getTargetClusterId() == -1 && selNodes1.get(3).getTargetClusterId() == -1
+//					)
+//						System.out.println("d1");
+//			}
+			
 			// note that the next filtering (i.e. connected comp) does not completely guarantee 'indecomposability' at this stage,
 			//		because we do not know the target indexes. But it might remove some decomposable cases, so it might beneficial to call the method here
 			ArrayList<ArrayList<TNode>> updatedSelNodesList2 = updatedSelNodesList;
-			if(!isBruteForce && (nbEdit <= 3 || (nbEdit>3 && isFastFrom4Edit)))
+			if(!isBruteForce && nbEdit <= 3)
 				updatedSelNodesList2 = filterByFakeEditTransformation(updatedSelNodesList, selSourceClusterIds, isWholeClusterBoolArr);
 			
+			
 			// ==============================
-			// special for 2-Edit and 3-Edit when the graph is complete unweighted => TODO handle in a clear way
 			ArrayList<ArrayList<TNode>> updatedSelNodesList3 = updatedSelNodesList2;
 			
 			// trying to filter for 4-edit without strict condition is possible, but it will not gain much time, like 3-edit
-			//if(!isBruteForce && nbEdit <= 3) 
-			if(!isBruteForce && (nbEdit <= 3 || (nbEdit>3 && isFastFrom4Edit))) 
+			if(!isBruteForce && nbEdit <= 3) 
 				updatedSelNodesList3 = filterForUnweightedGraphBeforeTargetIndexesForExternalLinksUpTo3Edit(updatedSelNodesList2, hasTwoSourceClusters);
-			
-			
+			else if(!isBruteForce && nbEdit > 3)
+				updatedSelNodesList3 = filterForUnweightedGraphBeforeTargetIndexesForExternalLinks(updatedSelNodesList2, false);
+
 			
 			// =============================================================================
 			// PART 3: Trying to filter after determining target indexes 
@@ -422,44 +549,76 @@ public class MyGenericEnumeration extends Thread {
 			
 			ArrayList<ArrayList<TNode>> updatedSelNodesList4 = prepareSelNodesWithTargetIndexes(updatedSelNodesList3);
 						
-			
 			if(selNodesList.size()>1) // the size of selNodesList is 1, this means, all moving nodes are in the same source cluster, so they are connected by construction
 				updatedSelNodesList4 = filterByConnectedComponent(updatedSelNodesList4); // remove decomposable Edit transformations
+				// TODO rename it "filterByPosConnectedComponent"
+			
 
+//			for(ArrayList<TNode> selNodes1 : updatedSelNodesList4){
+//				if(nbEdit==4 && selNodes1.get(0).getNodeId() == 12 && selNodes1.get(1).getNodeId() == 18 && 
+//					selNodes1.get(2).getNodeId() == 17 && selNodes1.get(3).getNodeId() == 35
+//					&& selNodes1.get(0).getTargetClusterId() == 5
+//					&& selNodes1.get(1).getTargetClusterId() == 5
+//					&& selNodes1.get(2).getTargetClusterId() == 4 && selNodes1.get(3).getTargetClusterId() == -1
+//					)
+//						System.out.println("d1");
+//			}
+			
+//			for(ArrayList<TNode> selNodes1 : updatedSelNodesList4){
+//				if(nbEdit==5 && selNodes1.get(0).getNodeId() == 13 && selNodes1.get(1).getNodeId() == 22 && 
+//					selNodes1.get(2).getNodeId() == 15 && selNodes1.get(3).getNodeId() == 21 && selNodes1.get(4).getNodeId() == 34
+//					&& selNodes1.get(0).getTargetClusterId() == 6 
+//					&& selNodes1.get(1).getTargetClusterId() == -1
+//					&& selNodes1.get(2).getTargetClusterId() == 4 && selNodes1.get(3).getTargetClusterId() == 4 && selNodes1.get(4).getTargetClusterId() == 4
+//					)
+//						System.out.println("d1");
+//			}
+			
+			
 			ArrayList<ArrayList<TNode>> updatedSelNodesList5 = updatedSelNodesList4;
 			if(!isBruteForce && nbEdit>3) {
 				updatedSelNodesList5 = filterByWeightSumZeroWithInternalTargetNeighborNodes(updatedSelNodesList4); // we do not need to do for 2edit or 3edit, because we implicitely do it in 'filterForUnweightedGraphBeforeTargetIndexesForExternalLinksUpTo3Edit()'
-				if(isSourceClusterSizesLessThanThree) // seek for sub 2edit or sub 3edit operation for additional filtering
-					updatedSelNodesList5 = filterForUnweightedGraphAfterTargetClusterIndexesFrom4Edit(updatedSelNodesList5);
+				if(isSourceClusterSizesLessThanThree){ // seek for sub 2edit or sub 3edit operation for additional filtering
+					//updatedSelNodesList5 = filterForUnweightedGraphAfterTargetClusterIndexesFrom4Edit(updatedSelNodesList5);
+					updatedSelNodesList5 = filterForUnweightedGraphBeforeTargetIndexesForExternalLinks(updatedSelNodesList5, true);
+				}
 			}
+			
+			
+//			for(ArrayList<TNode> selNodes1 : updatedSelNodesList5){
+//				if(nbEdit==4 && selNodes1.get(0).getNodeId() == 12 && selNodes1.get(1).getNodeId() == 18 && 
+//					selNodes1.get(2).getNodeId() == 17 && selNodes1.get(3).getNodeId() == 35
+//					&& selNodes1.get(0).getTargetClusterId() == 5
+//					&& selNodes1.get(1).getTargetClusterId() == 5
+//					&& selNodes1.get(2).getTargetClusterId() == 4 && selNodes1.get(3).getTargetClusterId() == -1
+//					)
+//						System.out.println("d1");
+//			}
+			
+//			for(ArrayList<TNode> selNodes1 : updatedSelNodesList5){
+//			if(nbEdit==5 && selNodes1.get(0).getNodeId() == 13 && selNodes1.get(1).getNodeId() == 22 && 
+//				selNodes1.get(2).getNodeId() == 15 && selNodes1.get(3).getNodeId() == 21 && selNodes1.get(4).getNodeId() == 34
+//				&& selNodes1.get(0).getTargetClusterId() == 6 
+//				&& selNodes1.get(1).getTargetClusterId() == -1
+//				&& selNodes1.get(2).getTargetClusterId() == 4 && selNodes1.get(3).getTargetClusterId() == 4 && selNodes1.get(4).getTargetClusterId() == 4
+//				)
+//					System.out.println("d1");
+//		}
+			
 //			
 //			if(nbEdit == 4) // hasTwoSourceClusters
 //				System.out.println("aa");
 			
 			//System.out.println("size of 'updatedSelNodesList4':" + updatedSelNodesList4.size());
-			for(ArrayList<TNode> updatedSelNodes : updatedSelNodesList5){
-				
+			for(ArrayList<TNode> updatedSelNodes : updatedSelNodesList5){			
 				boolean isEligible = true;
 				if(!isBruteForce)
 					isEligible = isEligibleTransformation(updatedSelNodes, false);
-				if(isEligible){
-					
-					if(nbEdit==4 && updatedSelNodes.get(0).getNodeId() == 13 && updatedSelNodes.get(1).getNodeId() == 17 && updatedSelNodes.get(2).getNodeId() == 11 && updatedSelNodes.get(3).getNodeId() == 15
-							&& updatedSelNodes.get(0).getTargetClusterId() == 5 && updatedSelNodes.get(1).getTargetClusterId() == 5 && updatedSelNodes.get(2).getTargetClusterId() == 5 && updatedSelNodes.get(3).getTargetClusterId() == 4
-							)
-								System.out.println("d");
-					
+				if(isEligible){					
 					ArrayList<ArrayList<TNode>> optimalTransformations = findOptimalTransformations(updatedSelNodes, selSourceClusterIds,
 							isWholeClusterBoolArr, initClusters);
 					
 					if(optimalTransformations.size()>0){
-						
-		//				Set<Clustering> set = enumerateClusterings(optimalTransformations);
-		//				for(Clustering c1 : set){
-		//					c1.computeImbalance(adjMat);
-		//					System.out.println(c1);
-		//				}
-						
 						Set<Clustering> set = new HashSet<Clustering>();
 						if(nbEdit > 1){
 //							ArrayList<ArrayList<TNode>> subset = filterByDecomposabe1EditOptimalTransformations(optimalTransformations);
@@ -499,6 +658,32 @@ public class MyGenericEnumeration extends Thread {
 	}
 	
 
+	
+	public ArrayList<ArrayList<TNode>> filterByLessLikelyTargetClusters(ArrayList<ArrayList<TNode>> selNodesList){
+		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
+		
+		for(ArrayList<TNode> selNodes : selNodesList){
+			
+			boolean ok = true;
+			for(TNode node : selNodes){
+				if(node.targetClusterId!=-1){
+					for(Predicate<Integer> p : node.getNotEqualToConstraints()){
+						if(!p.test(node.targetClusterId)){ // if targetClusterId is in the list
+							ok = false;
+							break;
+						}
+					}
+					if(!ok)
+						break;
+				}
+			}
+			if(ok)
+				collector.add(selNodes);
+		}
+		
+		return(collector);
+	}
+	
 	
 	
 	
@@ -544,6 +729,7 @@ public class MyGenericEnumeration extends Thread {
 						// an ex of 'indexesListByPartitionSize': [ [[0],[1,2],[3,4]], [[0],[1,3],[2,4]] ] for nbUnknown=5 and partitionSize=[1,2,2]
 						// [[0, 1]] for nbUnknown=2 and partitionSize=[2]
 						
+
 						for(ArrayList<int[]> indexesByPartitionSize : indexesListByPartitionSize ){
 							ArrayList<TNode> updatedSelNodes = new ArrayList<>();
 							for(TNode node : selNodes){ // deep copy
@@ -719,7 +905,7 @@ public class MyGenericEnumeration extends Thread {
 						TNode node = selNodes.get(i);
 						for(int j=i+1; j<selNodes.size(); j++){
 							TNode otherNode = selNodes.get(j);
-							if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0){
+							if(adjMat[node.getNodeId()][otherNode.getNodeId()]<0){
 								return(false);
 							}
 						}
@@ -753,16 +939,117 @@ public class MyGenericEnumeration extends Thread {
 		return(false);
 	}
 	
-
+	
+	// OLD version, which was erroneous.
+//	public ArrayList<ArrayList<TNode>> filterByWeightSumZeroWithInternalTargetNeighborNodes(ArrayList<ArrayList<TNode>> selNodesList){
+//		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
+//		
+//		for(ArrayList<TNode> selNodes : selNodesList){
+//			
+//			if(selNodes.size()==4 && selNodes.get(0).getNodeId() == 4 && selNodes.get(1).getNodeId() == 24 && 
+//					selNodes.get(2).getNodeId() == 30 && selNodes.get(3).getNodeId() == 17
+//					&& selNodes.get(0).getTargetClusterId() == -1
+//					&& selNodes.get(1).getTargetClusterId() == 6
+//					&& selNodes.get(2).getTargetClusterId() == 6 && selNodes.get(3).getTargetClusterId() == 2
+//					)
+//						System.out.println("d1");
+//			
+//			HashMap<Integer, ArrayList<TNode>> sourceClusterIdCounterMap = new HashMap<>(); //
+//			HashMap<Integer, ArrayList<TNode>> targetClusterIdCounterMap = new HashMap<>();
+//			for(TNode node : selNodes){
+//				// reorganize moving nodes by their target cluster
+//				if(node.targetClusterId != -1){
+//					if(!targetClusterIdCounterMap.containsKey(node.targetClusterId))
+//						targetClusterIdCounterMap.put(node.targetClusterId, new ArrayList<TNode>());
+//					targetClusterIdCounterMap.get(node.targetClusterId).add(node);
+//				}
+//				if(node.targetClusterId == -1 && node.targetIndex != -1){
+//					if(!targetClusterIdCounterMap.containsKey(-node.targetIndex)) // I put minus to distinguish from the other target clusters
+//						targetClusterIdCounterMap.put(-node.targetIndex, new ArrayList<TNode>());
+//					 targetClusterIdCounterMap.get(-node.targetIndex).add(node);
+//				}
+//				
+//				// reorganize moving nodes by their source cluster
+//				if(!sourceClusterIdCounterMap.containsKey(node.clusterId))
+//					sourceClusterIdCounterMap.put(node.clusterId, new ArrayList<TNode>());
+//				sourceClusterIdCounterMap.get(node.clusterId).add(node);
+//			}
+//			
+//			// for instance
+//			// targetClusterIdCounterMap:
+//			// {-1=[(nodeId:22)], 4=[(nodeId:15), (nodeId:21), (nodeId:34)], 6=[(nodeId:13)]}
+//			// sourceClusterIdCounterMap:
+//			// {4=[(nodeId:13), (nodeId:22)], 5=[(nodeId:15)], 6=[(nodeId:21), (nodeId:34)]}
+//			
+//			// ========================
+//			
+//
+//			boolean ok = true;
+//			for(TNode node : selNodes){ // for each node
+//				
+//				if( !(targetClusterIdCounterMap.get(node.targetClusterId).size()==1 // since 'node' has to be there
+//					&& !sourceClusterIdCounterMap.containsKey(node.targetClusterId) ) )
+//				{
+//					// we will verify the following cases:
+//					// let 'v' a moving node among other moving nodes
+//					// 1) let A the sum of the links between 'v' and the other moving nodes which are moving into the target cluster of 'v'
+//					// 2) let B the sum of the links between 'v' and the other moving nodes which are in the target cluster of 'v'
+//					// if an edit operation is undecomposable, then A+B should not be zero
+//	
+//					double sum = 0.0;
+//	
+//					ArrayList<TNode> tNeighs = targetClusterIdCounterMap.get(node.targetClusterId);
+//					if(tNeighs.size()>1){ // since 'node' has to be in 'tNeights', tNeighs.size() should be at least 2
+//						for(TNode neigh : tNeighs){
+//							if(neigh.nodeId != node.nodeId)
+//								sum += adjMat[node.getNodeId()][neigh.getNodeId()];
+//						}
+//					}
+//					
+//					if(sourceClusterIdCounterMap.containsKey(node.targetClusterId)){
+//						ArrayList<TNode> sNeighs = sourceClusterIdCounterMap.get(node.targetClusterId);
+//						if(sNeighs.size()>0){
+//							for(TNode neigh : sNeighs){
+//								if(neigh.nodeId != node.nodeId)
+//									sum += adjMat[node.getNodeId()][neigh.getNodeId()];
+//							}
+//						}
+//					}
+//					
+//	
+//					if(sum == 0.0){
+//						ok = false;
+//						break;
+//					}
+//				}
+//			}
+//			
+//			if(ok)
+//				collector.add(selNodes);
+//			
+//		}
+//		
+//		return(collector);
+//	}
+	
 	
 	public ArrayList<ArrayList<TNode>> filterByWeightSumZeroWithInternalTargetNeighborNodes(ArrayList<ArrayList<TNode>> selNodesList){
 		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
 		
 		for(ArrayList<TNode> selNodes : selNodesList){
 			
+//			if(selNodes.size()==5 && selNodes.get(0).getNodeId() == 13 && selNodes.get(1).getNodeId() == 22 && 
+//					selNodes.get(2).getNodeId() == 15 && selNodes.get(3).getNodeId() == 21 && selNodes.get(4).getNodeId() == 34
+//				&& selNodes.get(0).getTargetClusterId() == 6 
+//				&& selNodes.get(1).getTargetClusterId() == -1
+//				&& selNodes.get(2).getTargetClusterId() == 4 && selNodes.get(3).getTargetClusterId() == 4 && selNodes.get(4).getTargetClusterId() == 4
+//			)
+//				System.out.println("d1");
+			
+			HashMap<Integer, ArrayList<TNode>> sourceClusterIdCounterMap = new HashMap<>(); //
 			HashMap<Integer, ArrayList<TNode>> targetClusterIdCounterMap = new HashMap<>();
 			for(TNode node : selNodes){
-				// reorganize nodes being in the same target cluster
+				// reorganize moving nodes by their target cluster
 				if(node.targetClusterId != -1){
 					if(!targetClusterIdCounterMap.containsKey(node.targetClusterId))
 						targetClusterIdCounterMap.put(node.targetClusterId, new ArrayList<TNode>());
@@ -773,19 +1060,54 @@ public class MyGenericEnumeration extends Thread {
 						targetClusterIdCounterMap.put(-node.targetIndex, new ArrayList<TNode>());
 					 targetClusterIdCounterMap.get(-node.targetIndex).add(node);
 				}
+				
+				// reorganize moving nodes by their source cluster
+				if(!sourceClusterIdCounterMap.containsKey(node.clusterId))
+					sourceClusterIdCounterMap.put(node.clusterId, new ArrayList<TNode>());
+				sourceClusterIdCounterMap.get(node.clusterId).add(node);
 			}
+			
+			// for instance
+			// targetClusterIdCounterMap:
+			// {-1=[(nodeId:22)], 4=[(nodeId:15), (nodeId:21), (nodeId:34)], 6=[(nodeId:13)]}
+			// sourceClusterIdCounterMap:
+			// {4=[(nodeId:13), (nodeId:22)], 5=[(nodeId:15)], 6=[(nodeId:21), (nodeId:34)]}
 			
 			// ========================
 			
+
 			boolean ok = true;
 			for(TNode node : selNodes){ // for each node
-				ArrayList<TNode> tNeighs = targetClusterIdCounterMap.get(node.targetClusterId);
-				if(tNeighs.size()>1){
+				// if there are some moving nodes in the target cluster, and there is only moving node which will move into that target cluster
+				if( sourceClusterIdCounterMap.containsKey(node.targetClusterId) && targetClusterIdCounterMap.get(node.targetClusterId).size()==1)
+				{
+					// we will verify the following cases:
+					// let 'v' a moving node among other moving nodes
+					// 1) let A the sum of the links between 'v' and the other moving nodes which are moving into the target cluster of 'v'
+					// 2) let B the sum of the links between 'v' and the other moving nodes which are in the target cluster of 'v'
+					// if an edit operation is undecomposable, then A+B should not be zero
+	
 					double sum = 0.0;
-					for(TNode neigh : tNeighs){
-						if(neigh.nodeId != node.nodeId)
-							sum += adjMat[node.getNodeId()][neigh.getNodeId()];
+	
+//					ArrayList<TNode> tNeighs = targetClusterIdCounterMap.get(node.targetClusterId);
+//					if(tNeighs.size()>1){ // since 'node' has to be in 'tNeights', tNeighs.size() should be at least 2
+//						for(TNode neigh : tNeighs){
+//							if(neigh.nodeId != node.nodeId)
+//								sum += adjMat[node.getNodeId()][neigh.getNodeId()];
+//						}
+//					}
+					
+					if(sourceClusterIdCounterMap.containsKey(node.targetClusterId)){
+						ArrayList<TNode> sNeighs = sourceClusterIdCounterMap.get(node.targetClusterId);
+						if(sNeighs.size()>0){
+							for(TNode neigh : sNeighs){
+								if(neigh.nodeId != node.nodeId)
+									sum += adjMat[node.getNodeId()][neigh.getNodeId()];
+							}
+						}
 					}
+					
+	
 					if(sum == 0.0){
 						ok = false;
 						break;
@@ -795,7 +1117,7 @@ public class MyGenericEnumeration extends Thread {
 			
 			if(ok)
 				collector.add(selNodes);
-		
+			
 		}
 		
 		return(collector);
@@ -854,11 +1176,26 @@ public class MyGenericEnumeration extends Thread {
 	
 	
 	
-	// TODO for uncomplete networks: you need to ensure that when one nodes moves into known cluster, check the existence of link
 	public ArrayList<ArrayList<TNode>> filterByConnectedComponent(ArrayList<ArrayList<TNode>> selNodesList){
 		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
 			
 		for(ArrayList<TNode> selNodes : selNodesList){
+			
+//				if(selNodes.size()==5 && selNodes.get(0).getNodeId() == 13 && selNodes.get(1).getNodeId() == 22 && 
+//						selNodes.get(2).getNodeId() == 15 && selNodes.get(3).getNodeId() == 21 && selNodes.get(4).getNodeId() == 34
+//					&& selNodes.get(0).getTargetClusterId() == 6 
+//					&& selNodes.get(1).getTargetClusterId() == -1
+//					&& selNodes.get(2).getTargetClusterId() == 4 && selNodes.get(3).getTargetClusterId() == 4 && selNodes.get(4).getTargetClusterId() == 4
+//					)
+//						System.out.println("d1");
+			
+//			if(selNodes.size()==4 && selNodes.get(0).getNodeId() == 12 && selNodes.get(1).getNodeId() == 18 && 
+//					selNodes.get(2).getNodeId() == 17 && selNodes.get(3).getNodeId() == 35
+////					&& selNodes.get(0).getTargetClusterId() == -1
+////					&& selNodes.get(1).getTargetClusterId() == -1
+////					&& selNodes.get(2).getTargetClusterId() == 4 && selNodes.get(3).getTargetClusterId() == 4
+//					)
+//						System.out.println("d1");
 			
 			if(selNodes.size()>2){
 				Map<Integer, Integer> ClusterIdToVertexIdMap = new HashMap<>();
@@ -874,20 +1211,22 @@ public class MyGenericEnumeration extends Thread {
 				
 				UndirectedGraph g = new UndirectedGraph(ClusterIdToVertexIdMap.keySet().size());
 				
-				for(TNode node : selNodes){
-					if(node.getTargetClusterId() != -1)
-						g.addEdge(ClusterIdToVertexIdMap.get(node.getClusterId()), ClusterIdToVertexIdMap.get(node.getTargetClusterId()));
-					else
+				for(TNode node : selNodes){ // we treat the case of uncomplete graphs
+					if(node.getTargetClusterId() == -1){
 						g.addEdge(ClusterIdToVertexIdMap.get(node.getClusterId()), ClusterIdToVertexIdMap.get(-node.getTargetIndex()));
+					}
+					else {
+						for(TNode otherNode : selNodes){
+							if(node.getNodeId() != otherNode.getNodeId()){
+								if(node.getTargetClusterId() == otherNode.getClusterId() && adjMat[node.getNodeId()][otherNode.getNodeId()]!=0.0){
+									// we ensure that when one nodes moves into a known cluster, check the existence of link
+									g.addEdge(ClusterIdToVertexIdMap.get(node.getClusterId()), ClusterIdToVertexIdMap.get(node.getTargetClusterId()));
+									break;
+								}
+							}
+						}
+					}
 					
-//					for(TNode otherNode : selNodes){
-//						if(node.getNodeId() != otherNode.getNodeId()){
-//							if(otherNode.getTargetClusterId() != -1)
-//								g.addEdge(ClusterIdToVertexIdMap.get(otherNode.getClusterId()), ClusterIdToVertexIdMap.get(otherNode.getTargetClusterId()));
-//							else
-//								g.addEdge(ClusterIdToVertexIdMap.get(otherNode.getClusterId()), ClusterIdToVertexIdMap.get(-otherNode.getTargetIndex()));
-//						}
-//					}
 				}
 				if(g.isSingleConnectedComponent())
 					collector.add(selNodes);
@@ -901,6 +1240,96 @@ public class MyGenericEnumeration extends Thread {
 	}
 	
 
+	// this is used from 4-edit
+	public ArrayList<ArrayList<TNode>> filterForUnweightedGraphBeforeTargetIndexesForExternalLinks(
+			ArrayList<ArrayList<TNode>> selNodesList, boolean afterTargetIndexes)
+	{
+		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
+
+		for(ArrayList<TNode> selNodes : selNodesList){
+
+			int[] nbConnections = new int[selNodes.size()];
+			int indx = 0;
+			for(TNode node : selNodes){
+				int nb = 0;
+				
+				for(TNode otherNode : selNodes){
+					if(node.getNodeId() != otherNode.getNodeId()){
+						
+						boolean afterSameCluster1 = (node.getTargetClusterId()!=-1 && node.getTargetClusterId()==otherNode.getTargetClusterId());
+						boolean afterSameCluster2 = (node.getTargetClusterId()==-1 && node.getTargetIndex()>0 && 
+								node.getTargetIndex()==otherNode.getTargetIndex());
+						boolean afterPossiblySameCluster = (node.getTargetClusterId()==-1 && node.getTargetIndex()<0 && 
+								node.getTargetClusterId()==otherNode.getTargetClusterId());
+						boolean afterSameCluster = (afterSameCluster1 || afterSameCluster2);
+						
+						if(node.getClusterId() == otherNode.getClusterId())
+							nb++;
+						else if(afterSameCluster)
+							nb++;
+						else if(node.getTargetClusterId() == otherNode.getClusterId())
+							nb++;
+						else if(node.getClusterId() == otherNode.getTargetClusterId())
+							nb++;
+						else if(!afterTargetIndexes && afterPossiblySameCluster)
+							nb++; // we add this, because just in case they might move into the same target cluster
+					}
+				}
+				nbConnections[indx] = nb;
+				indx++;
+			}
+			
+			boolean ok = true;
+			indx=-1;
+			for(TNode node : selNodes){ // for each pair of nodes interacting between them
+				indx++;
+				if(!ok)
+					break;
+				
+				// we check if the vertex is like in 2- or 3-edit operation, i.e. not many interactions
+				if(nbConnections[indx]<=2){ // the upper bound is 2, because in 3-edit operation, a moving node has 2 interactions
+					// for external connections
+					for(TNode otherNode : selNodes){
+						if(ok && node.getNodeId() != otherNode.getNodeId()){ 
+							// ensure that 2 different nodes and they are not in the same cluster
+							
+							boolean afterSameCluster1 = (node.getTargetClusterId()!=-1 && node.getTargetClusterId()==otherNode.getTargetClusterId());
+							boolean afterSameCluster2 = (node.getTargetClusterId()==-1 && node.getTargetIndex()>0 && 
+									node.getTargetIndex()==otherNode.getTargetIndex());
+							boolean afterSameCluster = (afterSameCluster1 || afterSameCluster2);
+							
+							if(node.getClusterId() != otherNode.getClusterId()){
+								// for external connections
+								if(afterSameCluster){
+									if(adjMat[node.getNodeId()][otherNode.getNodeId()]<0) // we do not want negative weight
+										ok = false;
+								} 
+								else if(node.getTargetClusterId() != otherNode.getTargetClusterId()
+										&& (node.getTargetClusterId() == otherNode.clusterId || otherNode.getTargetClusterId() == node.clusterId)){
+									// target cluster ids are diff, but also 'node' moves into the other's cluster, i.e. interaction
+									if(adjMat[node.getNodeId()][otherNode.getNodeId()]>0) // we do not want positive weight
+										ok = false;
+								}
+							}
+							else {
+								// for internal connections
+								if(adjMat[node.getNodeId()][otherNode.getNodeId()]<0) // we do not want negative weight
+									ok = false;
+							}
+						}
+					}
+					
+				}
+			}
+			if(ok) // if it is still true
+				collector.add(selNodes);
+			
+		}
+		
+		return(collector);
+	}
+	
+	
 	
 	// we are interested in the case where the moving nodes are not in the same cluster. Then, we check if they will move into
 	//	the same or different cluster.
@@ -913,6 +1342,7 @@ public class MyGenericEnumeration extends Thread {
 			boolean ok = true;
 			boolean isExceptionalCaseFor3Edit = false;
 			int nbEdit = selNodes.size();
+			
 
 			// =======
 			// this exceptional case occurs because we want to perform the filtering before determining target indexes 
@@ -951,7 +1381,8 @@ public class MyGenericEnumeration extends Thread {
 			// =======
 			
 			if(!isExceptionalCaseFor3Edit){
-				// TODO adapt to the uncomplete graph
+				// to adapt this to the case of the uncomplete graph, a pair of nodes may have no link. 
+				// But, note that we check before this method that the moving nodes are connected internally and externally between them (i.e. connected component)
 				for(TNode node : selNodes){ // for each pair of nodes interacting between them
 					if(!ok)
 						break;
@@ -961,13 +1392,13 @@ public class MyGenericEnumeration extends Thread {
 							// ensure that 2 different nodes and they are not in the same cluster
 							
 							if(node.getTargetClusterId() == otherNode.getTargetClusterId()){
-								if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0) // we do not want negative weight or missing link
+								if(adjMat[node.getNodeId()][otherNode.getNodeId()]<0) // we do not want negative weight
 									ok = false;
 								
 							} else if(node.getTargetClusterId() != otherNode.getTargetClusterId()
 									&& (node.getTargetClusterId() == otherNode.clusterId || otherNode.getTargetClusterId() == node.clusterId)){
 								// target cluster ids are diff, but also one of them (or both) moves into the other's cluster, i.e. interaction
-								if(adjMat[node.getNodeId()][otherNode.getNodeId()]>=0) // we do not want positive weight or missing link
+								if(adjMat[node.getNodeId()][otherNode.getNodeId()]>0) // we do not want positive weight
 									ok = false;
 							}
 							
@@ -986,113 +1417,114 @@ public class MyGenericEnumeration extends Thread {
 	
 	
 	
-	public ArrayList<ArrayList<TNode>> filterForUnweightedGraphAfterTargetClusterIndexesFrom4Edit(ArrayList<ArrayList<TNode>> selNodesList){
-		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
-		
-		for(ArrayList<TNode> selNodes : selNodesList){
-			boolean ok = true;
-			if(isSubTwoOrThreeEditOperation(selNodes)){ // if this is the case, filter regarding positive/negative links between moving nodes
-				for(TNode node : selNodes){ // for each pair of nodes
-					if(!ok)
-						break;
-					
-					for(TNode otherNode : selNodes){
-						boolean nowSameCluster = (node.getClusterId() == otherNode.getClusterId());
-						if(ok && node.getNodeId() != otherNode.getNodeId()){ // ensure that 2 different nodes
-							
-							boolean afterSameCluster1 = (node.getTargetClusterId() == otherNode.getTargetClusterId());
-							boolean afterSameCluster2 = (node.getTargetIndex() == otherNode.getTargetIndex());
-							boolean afterSameCluster = (afterSameCluster1 && afterSameCluster2);
-							
-							if(nowSameCluster) {
-								if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0) 
-									ok = false;
-								
-							} else { // !nowSameCluster
-								
-								if(afterSameCluster){
-									if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0) // we do not want negative weight or missing link
-										ok = false;
-									
-								} else if(!afterSameCluster
-										&& (node.getTargetClusterId() == otherNode.clusterId || otherNode.getTargetClusterId() == node.clusterId)){
-									// target cluster ids are diff, but also one of them (or both) moves into the other's cluster, i.e. interaction
-									if(adjMat[node.getNodeId()][otherNode.getNodeId()]>=0) // we do not want positive weight or missing link
-										ok = false;
-								}
-								
-							}
-							
-							
-						}
-					}
-				}
-			} // even if the operation is not sub 2edit or sub 3edit, add it
-			if(ok) // if it is still true
-				collector.add(selNodes);
-		}
-		
-		return(collector);
-	}
-	
-	
-	// this is related to our MVMO property in order to say something about the sign of the edges
-	public boolean isSubTwoOrThreeEditOperation(ArrayList<TNode> selNodes){
-		HashMap<Integer, Integer> sourceClusterIdCounterMap = new HashMap<>(); 
-		HashMap<Integer, Integer> targetClusterIdCounterMap = new HashMap<>();
-		HashMap<Integer, Integer> targetClusterIndexesCounterMap = new HashMap<>();
-		
-		for(TNode node : selNodes){
-			if(!sourceClusterIdCounterMap.containsKey(node.clusterId))
-				sourceClusterIdCounterMap.put(node.clusterId, 0);
-			sourceClusterIdCounterMap.put(node.clusterId, sourceClusterIdCounterMap.get(node.clusterId) + 1);
-			if(sourceClusterIdCounterMap.get(node.clusterId)>3)
-				return(false);
-			
-			// -------------------
-			
-			if(node.targetClusterId != -1){
-				if(!targetClusterIdCounterMap.containsKey(node.targetClusterId))
-					targetClusterIdCounterMap.put(node.targetClusterId, 0);
-				targetClusterIdCounterMap.put(node.targetClusterId, targetClusterIdCounterMap.get(node.targetClusterId) + 1);
-				if(targetClusterIdCounterMap.get(node.targetClusterId)>3)
-					return(false);
-			}
-			
-			// -------------------
-			
-			if(node.targetClusterId == -1){
-				if(!targetClusterIndexesCounterMap.containsKey(node.targetIndex))
-					targetClusterIndexesCounterMap.put(node.targetIndex, 0);
-				targetClusterIndexesCounterMap.put(node.targetIndex, targetClusterIndexesCounterMap.get(node.targetIndex) + 1);
-				if(targetClusterIndexesCounterMap.get(node.targetIndex)>3)
-					return(false);
-			}
-		}
-		
-		// ==========================
-		
-		for(TNode node : selNodes){
-			int nbOthers1 = 0;
-			int nbOthers2 = 0;
-			if(targetClusterIdCounterMap.containsKey(node.clusterId))
-				nbOthers1 = targetClusterIdCounterMap.get(node.clusterId);
-			if(sourceClusterIdCounterMap.containsKey(node.targetClusterId))
-				nbOthers2 = sourceClusterIdCounterMap.get(node.targetClusterId);
-			
-			
-			if((sourceClusterIdCounterMap.get(node.clusterId)+nbOthers1)>3) {
-				// the number of nodes in the source cluster + the number of other nodes coming into source cluster 
-				return(false);
-			}
-			else if(node.targetClusterId != -1 && (targetClusterIdCounterMap.get(node.targetClusterId)+nbOthers2)>3) {
-				// the number of nodes moving into the target cluster + the number of other nodes leaving the target cluster 
-				return(false);
-			}
-		}
-		
-		return(true);
-	}
+//	public ArrayList<ArrayList<TNode>> filterForUnweightedGraphAfterTargetClusterIndexesFrom4Edit(ArrayList<ArrayList<TNode>> selNodesList){
+//		ArrayList<ArrayList<TNode>> collector = new ArrayList<ArrayList<TNode>>();
+//		
+//		for(ArrayList<TNode> selNodes : selNodesList){
+//			boolean ok = true;
+//			
+//			if(isSubTwoOrThreeEditOperation(selNodes)){ // if this is the case, filter regarding positive/negative links between moving nodes
+//				for(TNode node : selNodes){ // for each pair of nodes
+//					if(!ok)
+//						break;
+//					
+//					for(TNode otherNode : selNodes){
+//						boolean nowSameCluster = (node.getClusterId() == otherNode.getClusterId());
+//						if(ok && node.getNodeId() != otherNode.getNodeId()){ // ensure that 2 different nodes
+//							
+//							boolean afterSameCluster1 = (node.getTargetClusterId() == otherNode.getTargetClusterId());
+//							boolean afterSameCluster2 = (node.getTargetIndex() == otherNode.getTargetIndex());
+//							boolean afterSameCluster = (afterSameCluster1 && afterSameCluster2);
+//							
+//							if(nowSameCluster) {
+//								if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0) 
+//									ok = false;
+//								
+//							} else { // !nowSameCluster
+//								
+//								if(afterSameCluster){
+//									if(adjMat[node.getNodeId()][otherNode.getNodeId()]<=0) // we do not want negative weight or missing link
+//										ok = false;
+//									
+//								} else if(!afterSameCluster
+//										&& (node.getTargetClusterId() == otherNode.clusterId || otherNode.getTargetClusterId() == node.clusterId)){
+//									// target cluster ids are diff, but also one of them (or both) moves into the other's cluster, i.e. interaction
+//									if(adjMat[node.getNodeId()][otherNode.getNodeId()]>=0) // we do not want positive weight or missing link
+//										ok = false;
+//								}
+//								
+//							}
+//							
+//							
+//						}
+//					}
+//				}
+//			} // even if the operation is not sub 2edit or sub 3edit, add it
+//			if(ok) // if it is still true
+//				collector.add(selNodes);
+//		}
+//		
+//		return(collector);
+//	}
+//	
+//	
+//	// this is related to our MVMO property in order to say something about the sign of the edges
+//	public boolean isSubTwoOrThreeEditOperation(ArrayList<TNode> selNodes){
+//		HashMap<Integer, Integer> sourceClusterIdCounterMap = new HashMap<>(); 
+//		HashMap<Integer, Integer> targetClusterIdCounterMap = new HashMap<>();
+//		HashMap<Integer, Integer> targetClusterIndexesCounterMap = new HashMap<>();
+//		
+//		for(TNode node : selNodes){
+//			if(!sourceClusterIdCounterMap.containsKey(node.clusterId))
+//				sourceClusterIdCounterMap.put(node.clusterId, 0);
+//			sourceClusterIdCounterMap.put(node.clusterId, sourceClusterIdCounterMap.get(node.clusterId) + 1);
+//			if(sourceClusterIdCounterMap.get(node.clusterId)>3)
+//				return(false);
+//			
+//			// -------------------
+//			
+//			if(node.targetClusterId != -1){
+//				if(!targetClusterIdCounterMap.containsKey(node.targetClusterId))
+//					targetClusterIdCounterMap.put(node.targetClusterId, 0);
+//				targetClusterIdCounterMap.put(node.targetClusterId, targetClusterIdCounterMap.get(node.targetClusterId) + 1);
+//				if(targetClusterIdCounterMap.get(node.targetClusterId)>3)
+//					return(false);
+//			}
+//			
+//			// -------------------
+//			
+//			if(node.targetClusterId == -1){
+//				if(!targetClusterIndexesCounterMap.containsKey(node.targetIndex))
+//					targetClusterIndexesCounterMap.put(node.targetIndex, 0);
+//				targetClusterIndexesCounterMap.put(node.targetIndex, targetClusterIndexesCounterMap.get(node.targetIndex) + 1);
+//				if(targetClusterIndexesCounterMap.get(node.targetIndex)>3)
+//					return(false);
+//			}
+//		}
+//		
+//		// ==========================
+//		
+//		for(TNode node : selNodes){
+//			int nbOthers1 = 0;
+//			int nbOthers2 = 0;
+//			if(targetClusterIdCounterMap.containsKey(node.clusterId))
+//				nbOthers1 = targetClusterIdCounterMap.get(node.clusterId);
+//			if(sourceClusterIdCounterMap.containsKey(node.targetClusterId))
+//				nbOthers2 = sourceClusterIdCounterMap.get(node.targetClusterId);
+//			
+//			
+//			if((sourceClusterIdCounterMap.get(node.clusterId)+nbOthers1)>3) {
+//				// the number of nodes in the source cluster + the number of other nodes coming into source cluster 
+//				return(false);
+//			}
+//			else if(node.targetClusterId != -1 && (targetClusterIdCounterMap.get(node.targetClusterId)+nbOthers2)>3) {
+//				// the number of nodes moving into the target cluster + the number of other nodes leaving the target cluster 
+//				return(false);
+//			}
+//		}
+//		
+//		return(true);
+//	}
 	
 	
 	
@@ -1264,9 +1696,9 @@ public class MyGenericEnumeration extends Thread {
 			int[] indexs = ArrayOperations.seq(0, selNodes.size()-1);
 			List<int[]> combinations = Combination.generate(indexs, nbEditForDecomposability);
 			
-			boolean debug = false;
-			if(this.pass == 1 && selNodes.size()>2)
-				debug = true;
+//			boolean debug = false;
+//			if(this.pass == 1 && selNodes.size()>2)
+//				debug = true;
 			
 			boolean nonDecomposable = true;
 			for(int[] comb : combinations){
@@ -1512,27 +1944,39 @@ public class MyGenericEnumeration extends Thread {
 		
 		if(nbTargetClustersToFind > 0){
 		
+			// ===========================================================================
 			// 3.1) retrieve possible cluster ids
-			List<Integer> remainingClusterIds = new ArrayList<>();
-			int newEmptyClusterId = initClustering.getNbCluster()+1;
-			for(int cid=1; cid<=(initClustering.getNbCluster()+1); cid++) // +1 for a new cluster
-				remainingClusterIds.add(cid);
 			
+			int newEmptyClusterId = initClustering.getNbCluster()+1;
+			
+			ArrayList<List<Integer>> remainingClusterIdsList = new ArrayList<List<Integer>>();
 			for(TNode node : subsetNodes){
-				if(node.notEqualToConstraints.size()>0){
+				if(node.notEqualToConstraints.size()>0 && node.getTargetClusterId() == -1){
+					List<Integer> remainingClusterIds = new ArrayList<>();
+					for(int cid=1; cid<=(initClustering.getNbCluster()+1); cid++) // +1 for a new cluster
+						remainingClusterIds.add(cid);
+					
 					// chaining all predicates of a given node, if there are many
 					Predicate<Integer> compositePredicate = node.notEqualToConstraints.stream().reduce(w -> true, Predicate::and); 
 					remainingClusterIds = remainingClusterIds.stream()   // convert list to stream
 			                .filter(compositePredicate)
 			                .collect(Collectors.toList());
+					
+					remainingClusterIdsList.add(remainingClusterIds);
 				}
 			} // note that remainingClusterIds are common for all those subset nodes
 			
-			// 3.2) generate combinations of cluster ids of size 'nbTargetClusters'
-			List<int[]> permCombs = new ArrayList<int[]>();
-			List<int[]> combinations = Combination.generate(remainingClusterIds, nbTargetClustersToFind);
-			for (int[] combination : combinations)
-				permCombs.addAll(Permutation.permute(combination));
+			
+//			// 3.2) generate combinations of cluster ids of size 'nbTargetClusters'
+//			List<int[]> permCombs = new ArrayList<int[]>();
+//			List<int[]> combinations = Combination.generate(remainingClusterIds, nbTargetClustersToFind);
+//			for (int[] combination : combinations)
+//				permCombs.addAll(Permutation.permute(combination));
+			
+			List<ArrayList<Integer>> permCombs = Combination2.generate(remainingClusterIdsList);
+			
+			// ===========================================================================
+
 		
 //			if(selNodes.size() == 3 && selNodes.get(0).getNodeId() == 17 && selNodes.get(1).getNodeId() == 20 && selNodes.get(2).getNodeId() == 23)
 //				System.out.println("d");
@@ -1542,8 +1986,11 @@ public class MyGenericEnumeration extends Thread {
 //					)
 //						System.out.println("d");
 			
+			
 			// 4) for each combination, check if the global objective function remains unchanged, i.e. it is an optimal clustering ?
-			for (int[] combination : permCombs) {
+			//for (int[] combination : permCombs) {
+			for (ArrayList<Integer> combination : permCombs) {
+
 			    //System.out.println(Arrays.toString(combination));
 				
 //				ArrayList<Integer> selNodeIds = new ArrayList<Integer>();
@@ -1565,7 +2012,7 @@ public class MyGenericEnumeration extends Thread {
 					boolean fakeEditTransformation = false; 
 					if(newNode.getTargetClusterId() == -1){ // for the moving nodes where the target cluster id was unknown
 						int nodeSourceClusterIndex = ArrayOperations.whichIndex(selSourceClusterIds, nodeClusterId);
-						int newTargetClusterId = combination[newNode.getTargetIndex()-1];
+						int newTargetClusterId = combination.get(newNode.getTargetIndex()-1);
 						//there are two possibilities for a fake edit transformation
 						// 1) all the elements in one of the source clusters moves into a new (so, empty) cluster
 						

@@ -1,17 +1,22 @@
 package permanence;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import myUtils.Clustering;
 import myUtils.MyCGraph;
 
+// source: Li et al. Community Detection in Complicated Network based on the Multi-view Weighted Signed Permanence. 2016
 public class Permanence {
 	Clustering c;
 	double[][] adjMat;
 	MyCGraph g;
 	int n;
 	ArrayList<ArrayList<Integer>> clusters;
-
+	final int MAX_CLUSTER_SIZE_FOR_HIGH_PENALIZATION = 4;
+	final double HIGH_PENALIZATION_VALUE = 1.5;
 	
 	public Permanence(double[][] adjMat_, MyCGraph g_) {
 		c = g_.c;
@@ -21,30 +26,80 @@ public class Permanence {
 		clusters = c.getClustersInArrayFormat();
 	}
 	
-	public double[] computePermananceScores(){
-		double[] scores = new double[this.n];
+	// returns sorted array
+	public PermanenceData[] computePermananceScores(){
+		PermanenceData[] results = new PermanenceData[this.n];
 		
 		double[] signedCluCoefs = computeSignedClusteringCoefs();
 		double[] Ivalues = computeWeightedInternalDegreeSum();
-		double[] EmaxValues = computeEmaxValues();
+		double[] EmaxValues = computeEmaxValues(); // Emax values are not transformed, as opposed to Li et al.
 		double[] SintValues = computeSintValues();
 		double[] SextValues = computeSextValues();
 		
-		for(int i=0; i<this.n; i++){
-			double penalizationTerm = (1-signedCluCoefs[i]);
-			double pullOffTerm = 0.0;
-			double D = SintValues[i] + SextValues[i];
-			double internalStrength = (float) Ivalues[i]/D;
-			if(EmaxValues[i] != 0.0)
-				pullOffTerm = (float) 1/EmaxValues[i];
-			
-			scores[i] = (float) internalStrength*pullOffTerm - penalizationTerm;
+		int[] itsClusterSize = new int[this.n];
+		for(ArrayList<Integer> cluster : clusters){
+			for(int i : cluster)
+				itsClusterSize[i] = cluster.size();
 		}
-		return(scores);
+		
+		for(int i=0; i<this.n; i++){
+			double penalizationTerm = HIGH_PENALIZATION_VALUE;
+			if(itsClusterSize[i]>MAX_CLUSTER_SIZE_FOR_HIGH_PENALIZATION)
+				penalizationTerm = (1-signedCluCoefs[i]);
+			double D = SintValues[i] + SextValues[i];
+			double score = (float) (Ivalues[i]-EmaxValues[i])/D - penalizationTerm;
+			results[i] = new PermanenceData(i, score);
+		}
+		
+//		System.out.println("signedCluCoefs!!");
+//		List<Double> list1 = new ArrayList<Double>();
+//		for(Double a:signedCluCoefs) {
+//	         list1.add(a);
+//	      }
+//		System.out.println(list1);
+////
+//		System.out.println("Perm scores!!");
+//		List<Double> list2 = new ArrayList<Double>();
+//		for(PermanenceData a : results) {
+//	         list2.add(a.getPermScore());
+//	      }
+//		System.out.println(list2);
+		
+		Arrays.sort(results);
+		return(results);
 	}
 	
 	
-	public ArrayList<Integer> getInternalNeighbors(int nodeId, ArrayList<Integer> currCluster){
+	// Li et al. 2016. Community Detection in Complicated Network based on the Multi-view Weighted Signed Permanence
+//	public double[] computePermananceScores(){
+//		double[] scores = new double[this.n];
+//		
+//		double[] signedCluCoefs = computeSignedClusteringCoefs();
+//		double[] Ivalues = computeWeightedInternalDegreeSum();
+//		double[] EmaxValues = computeEmaxValues();
+//		double[] EmaxTransfValues = new double[EmaxValues.length];
+//		for(int i=0; i<EmaxValues.length; i++)
+//			EmaxTransfValues[i] = computeMappingForEmax(EmaxValues[i]);
+//			
+//		double[] SintValues = computeSintValues();
+//		double[] SextValues = computeSextValues();
+//		
+//		for(int i=0; i<this.n; i++){
+//			double penalizationTerm = (1-signedCluCoefs[i]);
+//			double pullOffTerm = 0.0;
+//			double D = SintValues[i] + SextValues[i];
+//			double internalStrength = (float) Ivalues[i]/D;
+//			if(EmaxValues[i] != 0.0)
+//				pullOffTerm = (float) 1/EmaxTransfValues[i];
+//			
+//			scores[i] = (float) internalStrength*pullOffTerm - penalizationTerm;
+//		}
+//		
+//		return(scores);
+//	}
+	
+	
+	public ArrayList<Integer> getNeighbors(int nodeId, ArrayList<Integer> currCluster){
 		ArrayList<Integer> neighs = new ArrayList<>();
 		for(Integer otherNodeId : currCluster){
 			if(nodeId!=otherNodeId && adjMat[nodeId][otherNodeId]!=0.0)
@@ -58,7 +113,7 @@ public class Permanence {
 	public double[] computeSignedClusteringCoefs(){
 		double[] coefs = new double[this.n];
 		
-		for(int currClusterId=1; currClusterId<this.clusters.size(); currClusterId++){
+		for(int currClusterId=1; currClusterId<=this.clusters.size(); currClusterId++){
 			ArrayList<Integer> currCluster = this.clusters.get(currClusterId-1);
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
@@ -72,13 +127,13 @@ public class Permanence {
 	
 	public double computeSignedClusteringCoefForNode(int nodeId, ArrayList<Integer> currCluster){
 		double result = 0.0;
-		ArrayList<Integer> neighs = getInternalNeighbors(nodeId, currCluster);
+		ArrayList<Integer> neighs = getNeighbors(nodeId, currCluster);
 		double nominator = 0.0;
 	    double denominator = 0.0;
 			    
 		if(neighs.size()>1){
 			for(int i=0; i<(neighs.size()-1); i++){
-				for(int j=i; i<neighs.size(); i++){
+				for(int j=i+1; j<neighs.size(); j++){
 					int neighNodeId1 = neighs.get(i);
 					int neighNodeId2 = neighs.get(j);
 					
@@ -96,7 +151,7 @@ public class Permanence {
 	public double[] computeWeightedInternalDegreeSum(){
 		double[] results = new double[this.n];
 		
-		for(int currClusterId=1; currClusterId<this.clusters.size(); currClusterId++){
+		for(int currClusterId=1; currClusterId<=this.clusters.size(); currClusterId++){
 			ArrayList<Integer> currCluster = this.clusters.get(currClusterId-1);
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
@@ -115,7 +170,7 @@ public class Permanence {
 			ArrayList<Integer> currCluster = this.clusters.get(currClusterId-1);
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
-				targetClusterIds[nodeId] = findTargetClusterIdWithEmaxForNode(nodeId, currClusterId);
+				targetClusterIds[nodeId] = findTargetClusterIdWithEmaxForNode(nodeId, currClusterId);// it returns -1 for an empty cluster
 			}
 		}
 		return(targetClusterIds);
@@ -129,7 +184,8 @@ public class Permanence {
 		for(int candTargetClusterId=1; candTargetClusterId<=this.clusters.size(); candTargetClusterId++){
 			if(candTargetClusterId != currClusterId){
 				double candTargetFitness = this.g.weightSumInClusters[nodeId][candTargetClusterId-1];
-				if(candTargetFitness > targetFitness){
+//				if(candTargetFitness>targetFitness && candTargetFitness>0){
+				if(candTargetFitness>targetFitness){
 					targetFitness = candTargetFitness;
 					targetClusterId = candTargetClusterId;
 				}
@@ -157,7 +213,10 @@ public class Permanence {
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
 				int targetClusterId = targetClusterIds[nodeId];
-				EmaxValues[nodeId] = computeMappingForEmax(this.g.weightSumInClusters[nodeId][targetClusterId-1]);
+				double w = 0;
+				w = this.g.weightSumInClusters[nodeId][targetClusterId-1];
+				EmaxValues[nodeId] = w;
+//				EmaxValues[nodeId] = computeMappingForEmax(w);
 			}
 		}
 		return(EmaxValues);
@@ -173,7 +232,15 @@ public class Permanence {
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
 				int targetClusterId = targetClusterIds[nodeId];
-				SextValues[nodeId] = computeMappingForEmax(this.g.absWeightSumInClusters[nodeId][targetClusterId-1]);
+//				if(targetClusterId!=-1){
+					ArrayList<Integer> targetCluster = this.clusters.get(targetClusterId-1);
+					ArrayList<Integer> neighs = getNeighbors(nodeId, targetCluster);
+					for(Integer neighId : neighs){
+						SextValues[nodeId] += Math.abs(this.adjMat[nodeId][neighId]);
+					}
+//				} else {
+//					SextValues[nodeId] = 0.0;
+//				}
 			}
 		}
 		return(SextValues);
@@ -189,7 +256,7 @@ public class Permanence {
 			ArrayList<Integer> currCluster = this.clusters.get(currClusterId-1);
 			
 			for(Integer nodeId : currCluster){ // for each node of this cluster
-				ArrayList<Integer> neighs = getInternalNeighbors(nodeId, currCluster);
+				ArrayList<Integer> neighs = getNeighbors(nodeId, currCluster);
 				for(Integer neighId : neighs){
 					SintValues[nodeId] += Math.abs(this.adjMat[nodeId][neighId]);
 				}
@@ -198,4 +265,34 @@ public class Permanence {
 		return(SintValues);
 	}
 	
+	// ==================================
+	
+	public class PermanenceData implements Comparable<PermanenceData> {
+		int nodeId;
+		double permScore;
+		
+		public PermanenceData(int nodeId_, double permScore_){
+			nodeId = nodeId_;
+			permScore = permScore_;
+		}
+		
+		public int getNodeId(){
+			return(nodeId);
+		}
+		
+		public double getPermScore(){
+			return(permScore);
+		}
+
+		@Override
+		public int compareTo(PermanenceData o) {
+			double res = this.permScore - o.permScore;
+			if(res<0)
+				return(-1);
+			else if(res>0)
+				return(1);
+			return 0;
+		}
+
+	}
 }

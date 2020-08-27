@@ -1,0 +1,17 @@
+membership0.txt ile membership1.txt arasinda 4 edit var ve bunda 3 node ayni clusterdan baska clustera gidiyo
+bunlar: 4, 6, 7, 12, 15, 29
+
+
+
+(0) Cluster1: [1, 2, 3, 8, 16, 25, 26, 31, 34, 35]
+Cluster2: [0, 5, 9, 18, 19, 20, 22, 27]
+Cluster3: [4, 6, 7, 12, 15, 29]
+Cluster4: [10, 11, 13, 14, 17, 21, 23, 24, 28, 30, 32, 33]
+imbalance: 0.0
+
+
+(1) Cluster1: [1, 2, 3, 8, 16, 25, 26, 31, 34, 35]
+Cluster2: [0, 4, 5, 6, 7, 9, 12, 15, 18, 19, 20, 22, 27, 29]
+Cluster3: [10, 11, 13, 14, 17, 21, 23, 24, 28, 30, 32, 33]
+imbalance: 0.0
+

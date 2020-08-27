@@ -10,12 +10,14 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 
 import enumeration.AbstractEnumeration;
 import enumeration.EnumerationBFS;
 import heuristic.MyExactPopulateHeuristic;
 import heuristic.MyHybridHeuristic;
 import myUtils.Clustering;
+import myUtils.Combination2;
 import myUtils.UndirectedGraph;
 
 
@@ -128,7 +130,6 @@ public class Populate {
 		System.out.println("===============================================");
 		
 
-		
 		new File(outputDirPath).mkdirs();
 		
 		try {

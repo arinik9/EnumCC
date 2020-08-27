@@ -1,4 +1,4 @@
-#ant -buildfile build-populate.xml compile jar;
+#ant -buildfile build-populate.xml clean compile jar;
 
 inputDir="in"
 graphFileName="net.G"
@@ -15,5 +15,5 @@ startSolutionDirPath="out/net"
     #fi
     #mkdir $outDir
 
-    ant -v -buildfile build-populate.xml -Djava.library.path="/opt/ibm/ILOG/CPLEX_Studio128/cplex/bin/x86-64_linux" -DinputDirPath="$inputDir" -DgraphFileName="$graphFileName" -DstartSolutionDirPath="$startSolutionDirPath" -DoutDir="$outDir" -DmaxNbEdit=4 -Dtilim=3600 -DnbThread=6 run
+    ant -v -buildfile build-populate.xml -Djava.library.path="/opt/ibm/ILOG/CPLEX_Studio128/cplex/bin/x86-64_linux" -DinputDirPath="$inputDir" -DgraphFileName="$graphFileName" -DstartSolutionDirPath="$startSolutionDirPath" -DoutDir="$outDir" -DmaxNbEdit=5 -Dtilim=3600 -DnbThread=6 run
 #done

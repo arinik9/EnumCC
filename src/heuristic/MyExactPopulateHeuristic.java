@@ -68,6 +68,13 @@ public class MyExactPopulateHeuristic {
 		discoveredClusteringFilePaths.clear();
 		long startTime = System.currentTimeMillis();
 		
+//		int[] membership11 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net-error-maxNbEdit=3/All", 7, adjMat.length);
+//		Clustering c11 = new Clustering(membership11, -1);
+//		int[] membership33 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net-error-maxNbEdit=3/All", 12, adjMat.length);
+//		Clustering c33 = new Clustering(membership33, -1);
+//		EditDistance ed = new EditDistance();
+//		int d11 = ed.calculateEditDistance(c11, c33);
+		
 //		String JAR_filepath_ExCC = "lib/ExCC.jar";
 //		String inputFilePath = inputDirPath + "/" + graphFileName;
 //		List<String> cmdArgsExCC = buildExCCCommand(JAR_filepath_ExCC, CPLEX_BIN_PATH, inputFilePath, outputDirPath, 600, true, false, n/3, false, false, false);
@@ -84,36 +91,42 @@ public class MyExactPopulateHeuristic {
 		
 		File oldfile; // = new File(outputDirPath+"/"+"ExCC-result.txt");
 
-//		int[] membership11 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 0, adjMat.length);
-//		Clustering c11 = new Clustering(membership11, -1);
-//		int[] membership22 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 1, adjMat.length);
-//		Clustering c22 = new Clustering(membership22, -1);
-//		int[] membership33 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 2, adjMat.length);
+//////		int[] membership11 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 0, adjMat.length);
+//////		Clustering c11 = new Clustering(membership11, -1);
+//////		int[] membership22 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 1, adjMat.length);
+//////		Clustering c22 = new Clustering(membership22, -1);
+//		int[] membership33 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 1, adjMat.length);
 //		Clustering c33 = new Clustering(membership33, -1);
+////////		EditDistance ed = new EditDistance();
+////////		int d11 = ed.calculateEditDistance(c11, c22);
+////////		int d22 = ed.calculateEditDistance(c11, c33);
+////////		int d33 = ed.calculateEditDistance(c22, c33);
+//////
+//////		
+////		int[] membership44 = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net", 12, adjMat.length);
+////		Clustering c44 = new Clustering(membership44, -1);
 ////		EditDistance ed = new EditDistance();
-////		int d11 = ed.calculateEditDistance(c11, c22);
-////		int d22 = ed.calculateEditDistance(c11, c33);
-////		int d33 = ed.calculateEditDistance(c22, c33);
-//
-//		
+////		int d11 = ed.calculateEditDistance(c33, c44);
+////		
 //		ArrayList<Clustering> clusterings = new ArrayList<Clustering>();
-//		for(int i=0; i<193; i++){
-//			int[] membership = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net/1", i, adjMat.length);
+//		for(int i=0; i<26; i++){
+//			int[] membership = readMembership("/home/nejat/eclipse/workspace-neon/TEMP/out/net/All", i, adjMat.length);
 //			Clustering c = new Clustering(membership, -1);
 //			c.computeImbalance(adjMat);
+//			System.out.println(c);
 //			clusterings.add(c);
 //		}
-////		
-////		ArrayList<Clustering> clusterings2 = new ArrayList<Clustering>();
-////		for(int i=0; i<19; i++){
-////			int[] membership = readMembership("/home/nejat/eclipse/workspace-neon/EnumCC/out/net/1", i, adjMat.length);
-////			Clustering c = new Clustering(membership, -1);
-////			c.computeImbalance(adjMat);
-////			clusterings2.add(c);
-////		}
-////		
+//////////		
+//////////		ArrayList<Clustering> clusterings2 = new ArrayList<Clustering>();
+//////////		for(int i=0; i<19; i++){
+//////////			int[] membership = readMembership("/home/nejat/eclipse/workspace-neon/EnumCC/out/net/1", i, adjMat.length);
+//////////			Clustering c = new Clustering(membership, -1);
+//////////			c.computeImbalance(adjMat);
+//////////			clusterings2.add(c);
+//////////		}
+//////////		
 //		int minI = -1;
-//		int minD = 100;
+//		int minD = 700;
 //		System.out.println("!!!!!  AMK !!!!!");
 //		Clustering issue = null;
 //		//for(Clustering c1 : clusterings2){
@@ -122,6 +135,8 @@ public class MyExactPopulateHeuristic {
 //				counter += 1;
 //				EditDistance ed = new EditDistance();
 //				int d11 = ed.calculateEditDistance(c33, c2);
+//				System.out.println("c:"+counter+" => "+d11);
+//
 //				if(d11<minD){
 //					minD = d11;
 //					issue = c2;
@@ -238,7 +253,7 @@ public class MyExactPopulateHeuristic {
 			}
 			
 			List<String> cmdArgsDistCC = buildDistCCCommand(JAR_filepath_DistCC, CPLEX_BIN_PATH, outputDirPath, graphFileName, clusterings_LB_AssocFileName, outputDirPath,
-					-1, true, false, n/3, false, false); // no time limit, since the aim is to cover all solution space
+					-1, true, false, n, false, false); // no time limit, since the aim is to cover all solution space
 			String cmdDistCC = cmdArgsDistCC.stream()
 				      .collect(Collectors.joining(" "));
 			runCommand(cmdDistCC);

@@ -24,7 +24,15 @@ public class TNode {
 		this.targetClusterId = targetClusterId_;
 		notEqualToConstraints = new ArrayList<>();
 		for(Integer val : notEqualToValues){
-			notEqualToConstraints.add(n -> n != val);
+			boolean ok = true;
+			for(Predicate<Integer> p : notEqualToConstraints){
+				if(!p.test(val)){
+					ok = false;
+					break;
+				}
+			}
+			if(ok)
+				notEqualToConstraints.add(n -> n != val);
 		}
 	}
 	
@@ -35,7 +43,15 @@ public class TNode {
 		this.targetClusterId = -1;
 		notEqualToConstraints = new ArrayList<>();
 		for(Integer val : notEqualToValues){
-			notEqualToConstraints.add(n -> n != val);
+			boolean ok = true;
+			for(Predicate<Integer> p : notEqualToConstraints){
+				if(!p.test(val)){
+					ok = false;
+					break;
+				}
+			}
+			if(ok)
+				notEqualToConstraints.add(n -> n != val);
 		}
 	}
 	
@@ -57,7 +73,15 @@ public class TNode {
 	
 	public void addNotEqualToConstraints(ArrayList<Integer> notEqualToValues){
 		for(Integer val : notEqualToValues){
-			notEqualToConstraints.add(n -> n != val);
+			boolean ok = true;
+			for(Predicate<Integer> p : notEqualToConstraints){
+				if(!p.test(val)){
+					ok = false;
+					break;
+				}
+			}
+			if(ok)
+				notEqualToConstraints.add(n -> n != val);
 		}
 	}
     
@@ -142,6 +166,9 @@ public class TNode {
 		this.targetFitness = targetFitness;
 	}
 	
+	public ArrayList<Predicate<Integer>> getNotEqualToConstraints(){
+		return(notEqualToConstraints);
+	}
 	
 	@Override
     public String toString() { 
