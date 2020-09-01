@@ -2,7 +2,8 @@ package enumeration;
 
 import java.util.ArrayList;
 import java.util.Collections;
-
+import java.util.HashSet;
+import java.util.Set;
 import myUtils.Clustering;
 
 public class EstimateDiameterSolutionClass extends AbstractEnumeration {
@@ -31,7 +32,7 @@ public class EstimateDiameterSolutionClass extends AbstractEnumeration {
 	
 	
 	@Override
-	public void enumerate(Clustering initClustering, String passOutputDirPath) {
+	public void enumerate(Clustering initClustering, String passOutputDirPath,  Set<Clustering> discoveredClusterings) {
 		this.initClustering = initClustering;
 		this.outDirPath = passOutputDirPath;
 		

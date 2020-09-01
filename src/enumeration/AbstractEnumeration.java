@@ -31,7 +31,7 @@ public abstract class AbstractEnumeration {
 	public abstract void reset();
 
 	
-	public abstract void enumerate(Clustering initClustering, String passOutputDirPath);
+	public abstract void enumerate(Clustering initClustering, String passOutputDirPath, Set<Clustering> discoveredClusterings);
 	
 	
 	public void writeIntoFile(String filepath, String content){

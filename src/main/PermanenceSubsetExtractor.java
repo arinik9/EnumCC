@@ -83,12 +83,24 @@ public class PermanenceSubsetExtractor {
 		
 		ArrayList<ArrayList<Integer>> subsetList = new ArrayList<ArrayList<Integer>>();
 		for(int levelNo=0; levelNo<nbEdit; levelNo++){
+            System.out.print("level:"+levelNo+";");
 			MovingDependance movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 
 					subsetMaxSize, maxNbDistinctDeltaFitnessForPossibleTargetClusters);
 			DirectedGraph diG = movDep.buildMovingDependenceGraph();
-			subsetList.addAll(movDep.prepareResult(diG, levelNo));
+            
+            String content = "[";
+            for(int i=1; i<adjMat.length; i++)
+                content += movDep.possibleTargetClusterIdListArray[i-1]+", ";
+            content += movDep.possibleTargetClusterIdListArray[adjMat.length-1]+"]";
+
+            System.out.print("possibleTargetClusterIds:"+content+";");
+            System.out.print("subsets:"+movDep.prepareResult(diG, levelNo));
+			//subsetList.addAll(movDep.prepareResult(diG, levelNo));
+
+            if(levelNo<(nbEdit-1))
+                System.out.print("&");
 		}
-		System.out.print(subsetList);
+		//System.out.print(subsetList);
 		
 		//System.out.println("end");
 	}

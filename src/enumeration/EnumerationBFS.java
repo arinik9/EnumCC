@@ -63,7 +63,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 	
 	// for each init optimal solution, we apply 1-Edit, 2-Edit, 3-Edit, etc. in order.
 	// If any new optimal clustering is found, we finish the cycle, and restart again
-	public void enumerate(Clustering initClustering, String passOutputDirPath){
+	public void enumerate(Clustering initClustering, String passOutputDirPath, Set<Clustering> discoveredClusterings){
 		initClustering.setId(idCounter);
 		this.initClustering = initClustering;
 		idCounter++;
@@ -80,6 +80,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 		int pass = 0;
 		nextInitClusterings.add(this.initClustering);
 		foundClusterings.add(this.initClustering);
+		discoveredClusterings.add(this.initClustering);
 		clusteringSizesByPass.add(nextInitClusterings.size());
 		while(remainingTime>0 && nextInitClusterings.size()>0){
 			pass++;
@@ -92,38 +93,39 @@ public class EnumerationBFS extends AbstractEnumeration {
 			nextInitClusterings.clear();
 
 			// sequential version, we put it here just in case
-			processSeqCurrInitClusteringsWithoutTimeLimit(currInitClusterings, maxNbEdit, -1);
+//			processSeqCurrInitClusteringsWithoutTimeLimit(currInitClusterings, maxNbEdit, -1, discoveredClusterings);
 			
-//			// ========================================================================================
-////			int timeoutThreads = 10; // 10 seconds => arbitrary
-////			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithTimeLimit(
-////					currInitClusterings, maxNbEdit, NB_THREAD, timeoutThreads);
-//			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithoutTimeLimit(
-//					currInitClusterings, maxNbEdit, NB_THREAD, pass);
-//			
-//		    //Set<Clustering> currFoundClusterings = new HashSet<>();
-//	        for (int i=0; i<threads.size(); i++) 
-//	        {
-//	        	MyGenericEnumeration myEnum = threads.get(i);
-//	        	Set<Clustering> currFoundClusterings = myEnum.foundClusterings;
-//				Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings);
-//				for(Clustering c1 : subset){ 
-//					c1.computeImbalance(adjMat); 
-//					// id should be handled here, since we cannot generate only non-visited clusterings in BFS
-//					//	so, we need to check if a clustering is already visited or not
-//					c1.setId(idCounter++); 
-//					System.out.println(c1);
-//				}
-//				nextInitClusterings.addAll(subset);
-//				foundClusterings.addAll(nextInitClusterings);
-//				
-//				// ======
-//				
-//				for(int nbEdit=1;nbEdit<=maxNbEdit;nbEdit++){
-//					String desc = "solId:"+myEnum.initClustering.getId()+",time:"+myEnum.execTimesByNbEdit[nbEdit-1];
-//					execTimesByNbEditMap.get(nbEdit).add(desc);
-//				}
-//	        }
+			// ========================================================================================
+//			int timeoutThreads = 10; // 10 seconds => arbitrary
+//			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithTimeLimit(
+//					currInitClusterings, maxNbEdit, NB_THREAD, timeoutThreads);
+			ArrayList<MyGenericEnumeration> threads = processParallelCurrInitClusteringsWithoutTimeLimit(
+					currInitClusterings, maxNbEdit, NB_THREAD, pass);
+			
+		    //Set<Clustering> currFoundClusterings = new HashSet<>();
+	        for (int i=0; i<threads.size(); i++) 
+	        {
+	        	MyGenericEnumeration myEnum = threads.get(i);
+	        	Set<Clustering> currFoundClusterings = myEnum.foundClusterings;
+				Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings, discoveredClusterings);
+				for(Clustering c1 : subset){ 
+					c1.computeImbalance(adjMat); 
+					// id should be handled here, since we cannot generate only non-visited clusterings in BFS
+					//	so, we need to check if a clustering is already visited or not
+					c1.setId(idCounter++); 
+					//System.out.println(c1);
+				}
+				nextInitClusterings.addAll(subset);
+				foundClusterings.addAll(nextInitClusterings);
+                discoveredClusterings.addAll(nextInitClusterings);
+				
+				// ======
+				
+				for(int nbEdit=1;nbEdit<=maxNbEdit;nbEdit++){
+					String desc = "solId:"+myEnum.initClustering.getId()+",time:"+myEnum.execTimesByNbEdit[nbEdit-1];
+					execTimesByNbEditMap.get(nbEdit).add(desc);
+				}
+	        }
 	        // ========================================================================================
 	        clusteringSizesByPass.add(nextInitClusterings.size());
 			//System.out.println("Current size: " + foundClusterings.size());
@@ -134,6 +136,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 			}
 			
 			System.out.println("22remainingTime: " + remainingTime + "s");
+    		System.out.println("Final size (during the passes): " + foundClusterings.size());
 		} // end of pass
 			
 		
@@ -152,7 +155,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 	
 	
 	
-	public void processSeqCurrInitClusteringsWithoutTimeLimit(Set<Clustering> currInitClusterings, int maxNbEdit, int pass)
+	public void processSeqCurrInitClusteringsWithoutTimeLimit(Set<Clustering> currInitClusterings, int maxNbEdit, int pass, Set<Clustering> discoveredClusterings)
 	{
 		int initCounter = 0;
 		for(Clustering initClustering : currInitClusterings){
@@ -186,7 +189,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 			}
 //			System.out.println("current size: " + currFoundClusterings.size());
 			
-			Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings);
+			Set<Clustering> subset = keepUndiscoveredClusterings(currFoundClusterings, discoveredClusterings);
 			//System.out.println("current final size: " + subset.size());
 
 			// for(Clustering c1 : subset){ c1.computeImbalance(adjMat); System.out.println(c1); }
@@ -288,7 +291,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 	} 
 	
 	
-	public Set<Clustering> keepUndiscoveredClusterings(Set<Clustering> candidates){
+	public Set<Clustering> keepUndiscoveredClusterings(Set<Clustering> candidates, Set<Clustering> discoveredClusterings){
 		Set<Clustering> subset = new HashSet<Clustering>(); // hashset does not eliminate duplicated Clustering objects
 		
 		for(Clustering c1 : candidates){
@@ -303,7 +306,7 @@ public class EnumerationBFS extends AbstractEnumeration {
 			// --------------------
 			if(!skip){
 				boolean add = true;
-				for(Clustering c2 : foundClusterings){
+				for(Clustering c2 : discoveredClusterings){
 					if(c1.equals(c2)){
 						add = false;
 						break;

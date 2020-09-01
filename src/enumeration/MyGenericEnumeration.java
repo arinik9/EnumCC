@@ -168,7 +168,7 @@ public class MyGenericEnumeration extends Thread {
 					if(nbEdit ==4)
 						movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 12, 2); // TODO put 15, 3, when n>40
 					else 
-						movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 12, 2);
+						movDep = new MovingDependance(g, adjMat, initClustering, nbEdit, levelNo, 10, 2);
 
 					DirectedGraph diG = movDep.buildMovingDependenceGraph();
 					
@@ -525,6 +525,16 @@ public class MyGenericEnumeration extends Thread {
 //					)
 //						System.out.println("d1");
 //			}
+			
+			for(ArrayList<TNode> selNodes1 : updatedSelNodesList){
+				if(nbEdit==4 && selNodes1.get(0).getNodeId() == 1 && selNodes1.get(1).getNodeId() == 9 && 
+					selNodes1.get(2).getNodeId() == 30 && selNodes1.get(3).getNodeId() == 31
+					&& selNodes1.get(0).getTargetClusterId() == 3
+					&& selNodes1.get(1).getTargetClusterId() == 2
+					&& selNodes1.get(2).getTargetClusterId() == 8 && selNodes1.get(3).getTargetClusterId() == 3
+					)
+						System.out.println("d1");
+			}
 			
 			// note that the next filtering (i.e. connected comp) does not completely guarantee 'indecomposability' at this stage,
 			//		because we do not know the target indexes. But it might remove some decomposable cases, so it might beneficial to call the method here
@@ -2020,9 +2030,9 @@ public class MyGenericEnumeration extends Thread {
 							if(newTargetClusterId == newEmptyClusterId){
 								fakeEditTransformation = true;
 							} else { // the whole source cluster does non move into a new cluster, the second fake scenario is that
-								// the whole source cluster moves into an existing cluster whose the size is less than the source size
-								if(initClusters.get(nodeClusterId-1).size()>initClusters.get(newTargetClusterId-1).size())
-									fakeEditTransformation = true;
+								// the whole source cluster moves into an existing cluster whose the size is less than the source size >> MOVED 
+//								if(initClusters.get(nodeClusterId-1).size()>initClusters.get(newTargetClusterId-1).size())
+//									fakeEditTransformation = true;
 							}
 						}
 						
@@ -2040,11 +2050,37 @@ public class MyGenericEnumeration extends Thread {
 						}
 					} 
 						
-					
-					
 					delta += newNode.calculateDeltaFitness();
 					updatedNodes.add(newNode);
 				}
+
+                // ========================================
+				// the second fake scenario is that
+				// the whole source cluster moves into an existing cluster whose the size is less than the source size
+				if(updatedNodes.size()>1){
+					boolean isSingleSourceCluster = true;
+					boolean isSingleTargetCluster = true; // we could also use 'isWholeClusterBoolArr'
+					int tid = updatedNodes.get(0).getTargetClusterId();
+					int sid = updatedNodes.get(0).getClusterId();
+					if(tid != newEmptyClusterId){
+						for(TNode node : updatedNodes){
+							if(tid != node.getTargetClusterId()){
+								isSingleTargetCluster = false;
+								break;
+							}
+							if(sid != node.getClusterId()){
+								isSingleSourceCluster = false;
+								break;
+							}	
+						}
+						if(isSingleSourceCluster && isSingleTargetCluster){
+							if(initClusters.get(sid-1).size()>initClusters.get(tid-1).size())
+								ok = false;
+						}
+					}
+				}
+				// ========================================
+
 				
 				boolean isEligible = isEligibleTransformation(updatedNodes, true);
 				if(isEligible && ok && delta == 0.0){

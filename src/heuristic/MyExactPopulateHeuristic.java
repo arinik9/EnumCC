@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import myUtils.Clustering;
 import myUtils.EditDistance;
 import enumeration.AbstractEnumeration;
+import java.util.Set;
+import java.util.HashSet;
 
 public class MyExactPopulateHeuristic {
 
@@ -37,7 +39,7 @@ public class MyExactPopulateHeuristic {
 	String JAR_filepath_DistCC = "lib/DistCC.jar";
 	int NB_THREAD = 6;
 	
-	ArrayList<Clustering> discoveredClusterings;
+	Set<Clustering> discoveredClusterings;
 	ArrayList<String> discoveredClusteringFilePaths;
 	
 	
@@ -57,7 +59,7 @@ public class MyExactPopulateHeuristic {
 		nbSeedSolutionCounter = 0;
 		passCounter = 0;
 		
-		discoveredClusterings = new ArrayList<>();
+		discoveredClusterings = new HashSet<Clustering>();
 		discoveredClusteringFilePaths = new ArrayList<>();
 	}
 	
@@ -202,7 +204,7 @@ public class MyExactPopulateHeuristic {
 			e.reset();
 			String passOutputDirPath = outputDirPath+"/"+passCounter;
 			new File(passOutputDirPath).mkdirs();
-			e.enumerate(currRefClustering, passOutputDirPath);
+			e.enumerate(currRefClustering, passOutputDirPath, discoveredClusterings);
 			// ===================
 			
 			
@@ -231,7 +233,7 @@ public class MyExactPopulateHeuristic {
 					LBs.add(1);
 				}
 				
-			} else { // at least use the info ofthe init solution
+			} else { // at least use the info of the init solution
 				discoveredClusterings.add(currRefClustering);
 				discoveredClusteringFilePaths.add(clusteringResultFilePath);
 				LBs.add(1); //+1 because we want to see a new solution

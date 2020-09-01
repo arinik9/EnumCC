@@ -78,6 +78,7 @@ public class MovingDependance {
 	// we limit the number of possible target clusters up to 3 clusters (including the new empty cluster) for a faster execution time
 	public LinkedList<Integer> getPossibleTargetClusterIds(int nodeId, int clusterId, int nbEdit, int levelNo){
 		LinkedList<Integer> possibleTargetClusterIds = new LinkedList<Integer>();
+		//int UP = (nbEdit-levelNo)+1; // upper bound >> normally it should eb this, but it makes the computation slower
 		int UP = (nbEdit-levelNo); // upper bound
 
 		Map<Double, ArrayList<Integer>> map = new TreeMap<>();
@@ -424,13 +425,15 @@ public class MovingDependance {
 							if(subset2.size()<=this.subsetMaxSize)
 								subsetList.add(subset2);
 						}
-						else
-							subset.addAll(subset2);
-							
+						else {
+							for(int v : subset2)
+								if(!subset.contains(v))
+									subset.add(v);
+						}
 					}
 				}
 				
-				if(subset.size()<=this.subsetMaxSize)
+				if(subset.size()>=nbEdit && subset.size()<=this.subsetMaxSize)
 				subsetList.add(subset);
 			
 			}
@@ -506,22 +509,29 @@ public class MovingDependance {
 							if(subset3.size()<=this.subsetMaxSize)
 								subsetList.add(subset3);
 						}
-						else
-							subset1.addAll(subset3);
+						else {
+							for(int v : subset3)
+								if(!subset1.contains(v))
+									subset1.add(v);
+						}
+						
 						
 						if(subset4.size()>=nbEdit){
 							if(subset4.size()<=this.subsetMaxSize)
 								subsetList.add(subset4);
 						}
-						else
-							subset2.addAll(subset4);
+						else{
+							for(int v : subset4)
+								if(!subset2.contains(v))
+									subset2.add(v);
+						}
 					}
 						
 				}
 				
-				if(subset1.size()<=this.subsetMaxSize)
+				if(subset1.size()>=nbEdit && subset1.size()<=this.subsetMaxSize)
 					subsetList.add(subset1);
-				if(subset2.size()<=this.subsetMaxSize)
+				if(subset2.size()>=nbEdit && subset2.size()<=this.subsetMaxSize)
 					subsetList.add(subset2);
 //				if(subset3.size()<=this.subsetMaxSize)
 //					subsetList.add(subset3);
@@ -562,8 +572,8 @@ public class MovingDependance {
 						// level 2 - 2
 						for(int v : diG.getInNeighbors(nodeId)) // by definition, incoming nodes have negative link with the node
 							for(int v2 : diG.getInNeighbors(v))
-							if(!subset2.contains(v2))
-								subset2.add(v2);
+								if(!subset2.contains(v2))
+									subset2.add(v2);
 
 //						// level 2 - 2
 //						for(int v : diG.getOutNeighbors(nodeId)) // by definition, incoming nodes have negative link with the node
@@ -577,13 +587,16 @@ public class MovingDependance {
 							if(subset2.size()<=this.subsetMaxSize)
 								subsetList.add(subset2);
 						}
-						else
-							subset.addAll(subset2);
+						else {
+							for(int v : subset2)
+								if(!subset.contains(v))
+									subset.add(v);
+						}
 					}
 						
 				}
 				
-				if(subset.size()<=this.subsetMaxSize)
+				if(subset.size()>=nbEdit && subset.size()<=this.subsetMaxSize)
 					subsetList.add(subset);
 				
 			}
