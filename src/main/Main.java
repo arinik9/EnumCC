@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import callback.lazy_callback.LazyCBCycle;
 import cplex.Cplex;
 import formulation.AbstractFormulation;
 import formulation.Edge;
@@ -282,8 +283,11 @@ public class Main {
 		AbstractFormulation p = null;
 		if(formulationType.equals("vertex"))
 			p = new FormulationVertex(myp); // LPFilePath.equals("")=FALSE, we will just load variables
-		else if(formulationType.equals("edge"))
+		else if(formulationType.equals("edge")) {
 			p = new FormulationEdge(myp);
+			if(!LPFilePath.equals("")) // we force lazy callback, when reading ILP model from LP file 
+				p.getCplex().use(new LazyCBCycle(p, 500));
+		}
 		
 		
 	    int[] initMembership = readMembership(initMembershipFilePath, n);
