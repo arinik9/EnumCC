@@ -58,7 +58,7 @@ So, which one would be preferable over the other one? We have not answered this 
 * Put `/opt/ibm/ILOG/CPLEX_Studio<YOUR_VERSION>/cplex/lib/cplex.jar` into the `lib` folder in this repository.
 * Compile and get the jar file for *RNSCC*: `ant -v -buildfile build-rns.xml compile jar`.
 * Compile and get the jar file for *EnumCC*: `ant -v -buildfile build.xml compile jar`.
-* Download the [Sosocc](https://github.com/arinik9/Sosocc) repository and put these jar files into the `lib` folder. Then, run first *ExCC* and then *EnumCC(3)*. See the instructions of the *Sosocc* repository for more details.
+* Download the [BenchmarkCC](https://github.com/arinik9/BenchmarkCC) repository and put these jar files into the `lib` folder. Then, run the program for the *ExCC* and *EnumCC(3)* methods. See the instructions of the *BenchmarkCC* repository for more details.
 
 
 
