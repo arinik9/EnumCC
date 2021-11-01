@@ -42,22 +42,12 @@ public class Edge {
 	}
 	
 	
-    /**
-     * Returns either endpoint of this edge.
-     *
-     * @return either endpoint of this edge
-     */
-    public int either() {
-        return i;
-    }
 	
-	
-	public int getOtherVertexId(int id){
+	int getOtherVertexId(int id){
 		if(id == i)
 			return(j);
-		else if(id == j)
+		else
 			return(i);
-		else throw new IllegalArgumentException("Illegal endpoint");
 	}
 
 	

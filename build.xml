@@ -1,0 +1,51 @@
+<project  name="EnumCC" default="run">
+
+<path id="jars">
+  <fileset dir="./lib" includes="*.jar"/>
+</path>
+
+<target name="clean">
+  <delete dir="bin"/>
+  <delete dir="exe"/>
+</target>
+
+<target name="compile">
+  <mkdir dir="bin"/>
+  <javac srcdir="src" destdir="bin" classpathref="jars" includeantruntime="false"/>
+</target>
+
+<target name="jar" depends="compile">
+
+  <mkdir dir="exe"/>
+
+  <jar destfile="exe/EnumCC.jar" basedir="bin">
+
+    <zipgroupfileset dir="lib" includes="*.jar"/>
+
+    <manifest>
+      <attribute name="Main-Class" value="main.Main"/>
+    </manifest>
+
+  </jar>
+</target>
+
+<target name="run">
+  <java jar="exe/EnumCC.jar" fork="true">
+    <sysproperty key="java.library.path" path="/opt/ibm/ILOG/CPLEX_Studio201/cplex/bin/x86-64_linux/"/>
+    <sysproperty key="inFile" value="${inFile}"/>
+    <sysproperty key="outDir" value="${outDir}"/>
+    <sysproperty key="LPFilePath" value="${LPFilePath}"/>
+    <sysproperty key="maxNbEdit" value="${maxNbEdit}"/>
+    <sysproperty key="JAR_filepath_RNSCC" value="${JAR_filepath_RNSCC}"/>
+    <sysproperty key="nbThread" value="${nbThread}"/>
+    <sysproperty key="initMembershipFilePath" value="${initMembershipFilePath}"/>
+    <sysproperty key="tilim" value="${tilim}"/>
+    <sysproperty key="solLim" value="${solLim}"/>
+    <sysproperty key="triangleIneqReducedForm" value="${triangleIneqReducedForm}"/>
+    <sysproperty key="lazyCB" value="${lazyCB}"/>
+    <sysproperty key="userCutCB" value="${userCutCB}"/>
+    <sysproperty key="formulationType" value="${formulationType}"/>
+  </java>
+</target>
+
+</project>

@@ -10,8 +10,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import enumeration.TNode;
+import rns.utils.TNode;
 
 
 
@@ -78,8 +79,9 @@ public class Clustering {
 	
 	
 	public void calculateClusterSizes(){
-		clusterSizes = new int[nbCluster+1]; // +1 because we can create a new cluster
-		for(int i=1; i<=(nbCluster+1); i++)
+		clusterSizes = new int[nbCluster+n]; // +n because we can create new clusters
+		// +n for new clusters (normally it is sufficient to add k new clusters, where k is the number of moving vertices)
+		for(int i=1; i<=(nbCluster+n); i++)
 			clusterSizes[i-1]=0;
 		
 		for(int i=0; i<n; i++){
@@ -190,7 +192,7 @@ public class Clustering {
 		
 		int nbClusterToDelete = 0;
 		ArrayList<Integer> oldClusterIds = new ArrayList<>();
-		for(int i=1; i<clusterSizes.length; i++){ // do not iterate over the last item, since it is dedicated to a new cluster
+		for(int i=1; i<=(clusterSizes.length-n); i++){ // do not iterate over the last n items, since they are dedicated to a new cluster
 			if(clusterSizes[i-1] == 0){
 				nbClusterToDelete += 1;
 				oldClusterIds.add(i);
@@ -263,6 +265,28 @@ public class Clustering {
 		this.imbalance = imbalance;
 	}
 	
+	
+	
+	
+	
+	public int[] retreiveEdgeVars(Set<formulation.Edge> set){
+		int[] edgeVars = new int[set.size()];
+
+		/* For each edge */
+		int k=0;
+		for(formulation.Edge e : set) {
+			// System.out.println("i:"+e.getSource()+ ", j:"+e.getDest());
+			if(this.membership[e.getSource()] == this.membership[e.getDest()])
+				edgeVars[k++] = 1;
+			else
+				edgeVars[k++] = 0;
+		}
+		// System.out.println("===================================");
+		
+		return(edgeVars);
+	}
+
+
 	
 	
 	

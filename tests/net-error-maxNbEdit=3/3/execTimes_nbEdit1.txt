@@ -1,5 +1,0 @@
-solId:0,time:0.0010000000474974513
-solId:1,time:0.0010000000474974513
-solId:2,time:0.0
-solId:3,time:0.0
-solId:4,time:0.0
