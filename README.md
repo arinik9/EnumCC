@@ -96,5 +96,5 @@ ant -v -buildfile build.xml -DformulationType="edge" -DinFile="in/example.G" -Do
 
 
 # References
-* **[Arınık'21]** N. Arınık, *Multiplicity in the Partitioning of Signed Graphs*. PhD thesis in Avignon Université (2021).
+* **[Arınık'21]** N. Arınık, [*Multiplicity in the Partitioning of Signed Graphs*](https://www.theses.fr/2021AVIG0285). PhD thesis in Avignon Université (2021).
 * **[Miyauchi'18]** A. Miyauchi, T. Sonobe, and N. Sukegawa,  *Exact Clustering via Integer Programming and Maximum Satisfiability*, in: AAAI Conference on Artificial Intelligence 32.1 (2018).
